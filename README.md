@@ -1,0 +1,72 @@
+# PANFinder
+
+This program searches for PAN in files from a root directory
+
+Detected PAN are numbers that:
+
+* Start with a well-known Bank or Financial institution IIN
+* Have a length consistent with the IIN (e.g. 16 digits for Visa PAN)
+* Have a correct Lühn key number
+
+_Note:_ spaces inside number are ignored for this detection
+
+## Usage
+
+```text
+Search for PAN in files
+
+Usage: PANFinder.exe [OPTIONS]
+
+Options:
+  -s, --search-dir <SEARCH_DIR>        Name of directory to analyse [default: .]
+  -e, --exclusions <EXCLUSIONS>        List, join by comma, of excluded files and directory (full path or part of it) [default: empty]
+      --no-console                     Disable console report
+      --text                           Enable text file report
+      --text-filename <TEXT_FILENAME>  Name of output text file [default: PANFinder_<datetime>.txt]
+      --report-test                    Enable report of PAN identified as test card
+  -q, --quiet-mode                     Quiet mode
+  -c, --conf-file <CONF_FILE>          Name of configuration file [default: ./PANFinder.toml]
+  -h, --help                           Print help
+  -V, --version                        Print version
+
+TOML configuration file can provide parameters inside `parameters` section
+- `search_dir`: name of directory to analyse
+- `exclusion`: list of files and directories exclusion, can be a full path or only part of it (e.g. `.git` to ignore all `.git` subdirectories)
+- `report_test`: report found PAN identified as test card
+- `output_console`: report on console
+- `output_text`: report in text file
+- `text_filename`: name of output file text
+
+If a parameter is set in both configuration file and command line arguments, the program uses in prior the value in command line arguments
+```
+
+## Supported file format
+
+The supported format, with format detection criteria, are listed hereafter
+
+* Text files: files without any `0` in the first 2000 bytes and not yet identified as other file type
+
+## Configuration file
+
+Program can be parameterized with a TOML configuration file (`./PANFinder.toml` by default)
+
+Parameters live in a `parameters` section:
+
+* `search_dir`: name of directory to analyse
+* `exclusion`: list of files and subdirectories (full path or part of path) to ignore in analyse
+* `report_test`: report found PAN identified as test card
+* `output_console`: report on console
+* `output_text`: report in text file
+* `text_filename`: name of output file text
+
+## Future evolution
+
+* [ ] Support more file format (PDF, archives and compressed files, ...)
+* [ ] Exclude some PAN (global or per file)
+* [ ] Output format (code climate, pdf)
+
+## License
+
+The source code for the site is licensed under the MIT license, which you can find in the `LICENSE` file.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
