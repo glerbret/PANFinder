@@ -45,6 +45,7 @@ If a parameter is set in both configuration file and command line arguments, the
 The supported format, with format detection criteria, are listed hereafter
 
 * Text files: files without any `0` in the first 2000 bytes and not yet identified as other file type
+* PDF files: files with `%PDF` as first 4 digits
 
 ## Configuration file
 
@@ -61,9 +62,9 @@ Parameters live in a `parameters` section:
 
 ## Future evolution
 
-* [ ] Support more file format (PDF, archives and compressed files, ...)
+* [ ] Support more file format (archives and compressed files, ...)
 * [ ] Exclude some PAN (global or per file)
-* [ ] Output format (code climate, pdf)
+* [ ] Output format (code climate)
 
 ## License
 
