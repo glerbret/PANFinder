@@ -11,6 +11,8 @@ pub struct Configuration {
     pub output_console: bool,
     pub output_text: bool,
     pub text_filename: String,
+    pub output_code_climate: bool,
+    pub code_climate_filename: String,
 }
 impl Configuration {
     pub fn new() -> Configuration {
@@ -22,6 +24,8 @@ impl Configuration {
             output_console: true,
             output_text: false,
             text_filename: String::new(),
+            output_code_climate: false,
+            code_climate_filename: String::new(),
         }
     }
 }
@@ -42,6 +46,10 @@ pub fn get_config() -> Configuration {
                     output_console: parameters.output_console.unwrap_or(true),
                     output_text: parameters.output_text.unwrap_or(false),
                     text_filename: parameters.text_filename.unwrap_or(String::new()),
+                    output_code_climate: parameters.output_code_climate.unwrap_or(false),
+                    code_climate_filename: parameters
+                        .code_climate_filename
+                        .unwrap_or(String::new()),
                 }
             } else {
                 Configuration::new()
@@ -72,6 +80,12 @@ pub fn get_config() -> Configuration {
     if let Some(text_filename) = args.text_filename {
         config.text_filename = text_filename;
     }
+    if args.code_climate {
+        config.output_code_climate = true;
+    }
+    if let Some(codeclimate_filename) = args.code_climate_filename {
+        config.code_climate_filename = codeclimate_filename;
+    }
 
     config
 }
@@ -82,9 +96,11 @@ pub fn get_config() -> Configuration {
 - `search_dir`: name of directory to analyse
 - `exclusion`: list of files and directories exclusion, can be a full path or only part of it (e.g. `.git` to ignore all `.git` subdirectories)
 - `report_test`: report found PAN identified as test card
-- `output_console`: report on console
-- `output_text`: report in text file
+- `output_console`: enable report on console
+- `output_text`: enable report in text file
 - `text_filename`: name of output file text
+- `output_code_climate`: enable report in Code Climate file
+- `code_climate_filename`: name of output Code Climate file
 
 If a parameter is set in both configuration file and command line arguments, the program uses in prior the value in command line arguments")]
 struct Args {
@@ -108,6 +124,14 @@ struct Args {
     #[arg(long)]
     text_filename: Option<String>,
 
+    /// Enable Code Climate file report
+    #[arg(long, default_value_t = false)]
+    code_climate: bool,
+
+    /// Name of output Code Climate file [default: PANFinder_<datetime>.json]
+    #[arg(long)]
+    code_climate_filename: Option<String>,
+
     /// Enable report of PAN identified as test card
     #[arg(long, default_value_t = false)]
     report_test: bool,
@@ -130,6 +154,8 @@ struct ParametersConfigFile {
     output_console: Option<bool>,
     output_text: Option<bool>,
     text_filename: Option<String>,
+    output_code_climate: Option<bool>,
+    code_climate_filename: Option<String>,
 }
 
 /// Configuration from file

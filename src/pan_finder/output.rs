@@ -1,5 +1,7 @@
 use chrono::*;
 use colored::Colorize;
+use hmac_sha512::Hash;
+use serde_json::json;
 use std::fs::OpenOptions;
 use std::io::Error;
 use std::io::Write;
@@ -19,6 +21,11 @@ pub fn output_result(
     if config.output_text {
         output_text(&result, &analyse_datetime, config)
             .unwrap_or_else(|error| println!("Error writing text file result: {}", error));
+    }
+
+    if config.output_code_climate {
+        output_code_climate(&result, &analyse_datetime, config)
+            .unwrap_or_else(|error| println!("Error writing Code Climate file result: {}", error));
     }
 }
 
@@ -132,6 +139,75 @@ fn output_text(
             }
         }
     }
+
+    Ok(())
+}
+
+fn output_code_climate(
+    result: &AnalyseResult,
+    analyse_datetime: &DateTime<Local>,
+    config: &Configuration,
+) -> Result<(), Error> {
+    let filename = if !config.code_climate_filename.is_empty() {
+        &config.code_climate_filename
+    } else {
+        &format!("PANFinder_{}.json", analyse_datetime.format("%Y%m%d%H%M%S"))
+    };
+    let mut file = OpenOptions::new()
+        .create_new(true)
+        .append(true)
+        .open(filename)?;
+
+    let mut vector: Vec<serde_json::Value> = Vec::new();
+    for item in &result.results_list {
+        if !item.error_msg.is_empty() {
+            let mut hasher = Hash::new();
+            hasher.update(&item.filename);
+            hasher.update(&item.error_msg);
+            let hash = hasher.finalize();
+            let issue = json!({
+                "type": "issue",
+                "check_name": "Analyse/Parse error",
+                "description": item.error_msg,
+                "categories": ["Security"],
+                "location": {
+                     "path": item.filename,
+              "lines": {
+                "begin": 1,
+                "end": 1,
+                }},
+                "severity": "critical",
+                "fingerprint": hex::encode(hash),
+            });
+            vector.push(issue);
+        }
+
+        if !item.pan_found.is_empty() {
+            for pan in &item.pan_found {
+                let mut hasher = Hash::new();
+                hasher.update(&item.filename);
+                hasher.update(&pan.brand);
+                hasher.update(&pan.pan);
+                let hash = hasher.finalize();
+                let issue = json!({
+                    "type": "issue",
+                    "check_name": "Analyse/PAN found",
+                    "description": format!("{}: {}", pan.brand, pan.pan),
+                    "categories": ["Security"],
+                    "location": {
+                         "path": item.filename,
+                  "lines": {
+                    "begin": 1,
+                    "end": 1,
+                    }},
+                    "severity": "critical",
+                    "fingerprint": hex::encode(hash),
+                });
+                vector.push(issue);
+            }
+        }
+    }
+    writeln!(file, "{}", json!(vector))?;
 
     Ok(())
 }
