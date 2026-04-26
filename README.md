@@ -34,6 +34,10 @@ Options:
           Name of output Code Climate file [default: PANFinder_<datetime>.json]
       --report-test
           Enable report of PAN identified as test card
+      --disable-text-check
+          Disable analyse of text file
+      --disable-pdf-check
+          Disable analyse of PDF file
   -q, --quiet-mode
           Quiet mode
   -c, --conf-file <CONF_FILE>
@@ -47,6 +51,8 @@ TOML configuration file can provide parameters inside `parameters` section
 - `search_dir`: name of directory to analyse
 - `exclusion`: list of files and directories exclusion, can be a full path or only part of it (e.g. `.git` to ignore all `.git` subdirectories)
 - `report_test`: report found PAN identified as test card
+- `check_text`: enable analyse of text file
+- `check_pdf`: enable analyse of PDF file
 - `output_console`: enable report on console
 - `output_text`: enable report in text file
 - `text_filename`: name of output file text
@@ -72,6 +78,8 @@ Parameters live in a `parameters` section:
 * `search_dir`: name of directory to analyse
 * `exclusion`: list of files and subdirectories (full path or part of path) to ignore in analyse
 * `report_test`: report found PAN identified as test card
+* `check_text`: enable analyse of text file
+* `check_pdf`: enable analyse of PDF file
 * `output_console`: enable report on console
 * `output_text`: enable report in text file
 * `text_filename`: name of output file text

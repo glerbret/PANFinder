@@ -44,7 +44,7 @@ pub fn get_files_list(config: &Configuration) -> Vec<FilesDescription> {
         progress_bar.inc(1);
         let ent = entry.unwrap();
         if ent.file_type().is_file() && !is_file_empty(ent.path()) {
-            let file_type = detect_file_type(ent.path());
+            let file_type = detect_file_type(config, ent.path());
 
             if file_type != FileType::Unknown {
                 files_list.push(FilesDescription {
@@ -130,13 +130,17 @@ fn is_pdf_file(data: &[u8; 2000], len: usize) -> bool {
 }
 
 /// Detect type of file
-fn detect_file_type(path: &Path) -> FileType {
+fn detect_file_type(config: &Configuration, path: &Path) -> FileType {
     let mut data: [u8; 2000] = [0; 2000];
     match read_file_content(path, &mut data) {
         Ok(len) => {
             if is_pdf_file(&data, len) {
-                FileType::Pdf
-            } else if is_text_file(&data, len) {
+                if config.check_pdf {
+                    FileType::Pdf
+                } else {
+                    FileType::Unknown
+                }
+            } else if config.check_text && is_text_file(&data, len) {
                 FileType::Text
             } else {
                 FileType::Unknown
@@ -202,26 +206,84 @@ mod tests {
     }
 
     #[test]
-    fn test_detect_file_type() -> Result<(), String> {
+    fn test_detect_file_type_all() -> Result<(), String> {
+        let config = Configuration::new();
+
         assert_eq!(
-            detect_file_type(Path::new("./testdata/text_present")),
+            detect_file_type(&config, Path::new("./testdata/text_present")),
             FileType::Text
         );
         assert_eq!(
-            detect_file_type(Path::new("./testdata/text_empty_file")),
+            detect_file_type(&config, Path::new("./testdata/text_empty_file")),
             FileType::Text
         );
         assert_eq!(
-            detect_file_type(Path::new("./testdata/png_empty.png")),
+            detect_file_type(&config, Path::new("./testdata/png_empty.png")),
             FileType::Unknown
         );
         assert_eq!(
-            detect_file_type(Path::new("./testdata/pdf_empty.pdf")),
+            detect_file_type(&config, Path::new("./testdata/pdf_empty.pdf")),
             FileType::Pdf
         );
         assert_eq!(
-            detect_file_type(Path::new("./testdata/pdf_present.pdf")),
+            detect_file_type(&config, Path::new("./testdata/pdf_present.pdf")),
             FileType::Pdf
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_detect_file_type_no_text() -> Result<(), String> {
+        let mut config = Configuration::new();
+        config.check_text = false;
+
+        assert_eq!(
+            detect_file_type(&config, Path::new("./testdata/text_present")),
+            FileType::Unknown
+        );
+        assert_eq!(
+            detect_file_type(&config, Path::new("./testdata/text_empty_file")),
+            FileType::Unknown
+        );
+        assert_eq!(
+            detect_file_type(&config, Path::new("./testdata/png_empty.png")),
+            FileType::Unknown
+        );
+        assert_eq!(
+            detect_file_type(&config, Path::new("./testdata/pdf_empty.pdf")),
+            FileType::Pdf
+        );
+        assert_eq!(
+            detect_file_type(&config, Path::new("./testdata/pdf_present.pdf")),
+            FileType::Pdf
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_detect_file_type_no_pdf() -> Result<(), String> {
+        let mut config = Configuration::new();
+        config.check_pdf = false;
+
+        assert_eq!(
+            detect_file_type(&config, Path::new("./testdata/text_present")),
+            FileType::Text
+        );
+        assert_eq!(
+            detect_file_type(&config, Path::new("./testdata/text_empty_file")),
+            FileType::Text
+        );
+        assert_eq!(
+            detect_file_type(&config, Path::new("./testdata/png_empty.png")),
+            FileType::Unknown
+        );
+        assert_eq!(
+            detect_file_type(&config, Path::new("./testdata/pdf_empty.pdf")),
+            FileType::Unknown
+        );
+        assert_eq!(
+            detect_file_type(&config, Path::new("./testdata/pdf_present.pdf")),
+            FileType::Unknown
         );
         Ok(())
     }

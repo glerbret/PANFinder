@@ -7,6 +7,8 @@ pub struct Configuration {
     pub search_dir: String,
     pub exclusions: Vec<String>,
     pub report_test_bin: bool,
+    pub check_text: bool,
+    pub check_pdf: bool,
     pub quiet_mode: bool,
     pub output_console: bool,
     pub output_text: bool,
@@ -20,6 +22,8 @@ impl Configuration {
             search_dir: String::from("."),
             exclusions: Vec::new(),
             report_test_bin: false,
+            check_text: true,
+            check_pdf: true,
             quiet_mode: false,
             output_console: true,
             output_text: false,
@@ -42,6 +46,8 @@ pub fn get_config() -> Configuration {
                     search_dir: parameters.search_dir.unwrap_or(String::from(".")),
                     exclusions: parameters.exclusions.unwrap_or(Vec::new()),
                     report_test_bin: parameters.report_test.unwrap_or(false),
+                    check_text: parameters.check_text.unwrap_or(true),
+                    check_pdf: parameters.check_pdf.unwrap_or(true),
                     quiet_mode: false,
                     output_console: parameters.output_console.unwrap_or(true),
                     output_text: parameters.output_text.unwrap_or(false),
@@ -86,6 +92,12 @@ pub fn get_config() -> Configuration {
     if let Some(codeclimate_filename) = args.code_climate_filename {
         config.code_climate_filename = codeclimate_filename;
     }
+    if args.disable_text_check {
+        config.check_text = false;
+    }
+    if args.disable_pdf_check {
+        config.check_pdf = false;
+    }
 
     config
 }
@@ -96,6 +108,8 @@ pub fn get_config() -> Configuration {
 - `search_dir`: name of directory to analyse
 - `exclusion`: list of files and directories exclusion, can be a full path or only part of it (e.g. `.git` to ignore all `.git` subdirectories)
 - `report_test`: report found PAN identified as test card
+- `check_text`: enable analyse of text file
+- `check_pdf`: enable analyse of PDF file
 - `output_console`: enable report on console
 - `output_text`: enable report in text file
 - `text_filename`: name of output file text
@@ -136,6 +150,14 @@ struct Args {
     #[arg(long, default_value_t = false)]
     report_test: bool,
 
+    /// Disable analyse of text file
+    #[arg(long, default_value_t = false)]
+    disable_text_check: bool,
+
+    /// Disable analyse of PDF file
+    #[arg(long, default_value_t = false)]
+    disable_pdf_check: bool,
+
     /// Quiet mode
     #[arg(short, long, default_value_t = false)]
     quiet_mode: bool,
@@ -151,6 +173,8 @@ struct ParametersConfigFile {
     search_dir: Option<String>,
     exclusions: Option<Vec<String>>,
     report_test: Option<bool>,
+    check_text: Option<bool>,
+    check_pdf: Option<bool>,
     output_console: Option<bool>,
     output_text: Option<bool>,
     text_filename: Option<String>,
