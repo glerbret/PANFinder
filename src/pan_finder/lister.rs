@@ -12,6 +12,7 @@ pub enum FileType {
     Unknown,
 
     Text,
+    Pdf,
 }
 
 /// Configuration of application
@@ -92,42 +93,60 @@ fn read_up_to(file: &mut impl std::io::Read, mut buf: &mut [u8]) -> Result<usize
     Ok(buf_len - buf.len())
 }
 
+/// Read file content
+fn read_file_content(path: &Path, data: &mut [u8; 2000]) -> Result<usize, String> {
+    match File::open(path) {
+        Ok(mut f) => match read_up_to(&mut f, data) {
+            Ok(len) => Ok(len),
+            Err(err) => Err(format!(
+                "File {} cannot be read ({}), file ignored",
+                path.display(),
+                err
+            )),
+        },
+        Err(err) => Err(format!(
+            "File {} cannot be opened ({}), file ignored",
+            path.display(),
+            err
+        )),
+    }
+}
+
 /// Check is a file is a text one
 ///
 /// _Note:_ a file is considered be a text one if there is no `0` in its first 8000 bytes
-fn is_text_file(path: &Path) -> bool {
-    let mut data: [u8; 2000] = [0; 2000];
+fn is_text_file(data: &[u8; 2000], len: usize) -> bool {
+    !data[0..len].contains(&0u8)
+}
 
-    match File::open(path) {
-        Ok(mut f) => match read_up_to(&mut f, &mut data) {
-            Ok(len) => !data[0..len].contains(&0u8),
-            Err(err) => {
-                println!(
-                    "File {} cannot be read ({}), file ignored",
-                    path.display(),
-                    err
-                );
-                false
-            }
-        },
-        Err(err) => {
-            println!(
-                "File {} cannot be opened ({}), file ignored",
-                path.display(),
-                err
-            );
-            false
-        }
+/// Check is a file is a text one
+fn is_pdf_file(data: &[u8; 2000], len: usize) -> bool {
+    if len >= 4 {
+        let header: [u8; 4] = data[0..4].try_into().unwrap();
+        &header == b"%PDF"
+    } else {
+        false
     }
 }
 
 /// Detect type of file
 fn detect_file_type(path: &Path) -> FileType {
-    if is_text_file(path) {
-        return FileType::Text;
+    let mut data: [u8; 2000] = [0; 2000];
+    match read_file_content(path, &mut data) {
+        Ok(len) => {
+            if is_pdf_file(&data, len) {
+                FileType::Pdf
+            } else if is_text_file(&data, len) {
+                FileType::Text
+            } else {
+                FileType::Unknown
+            }
+        }
+        Err(error) => {
+            println!("{}", error);
+            FileType::Unknown
+        }
     }
-
-    FileType::Unknown
 }
 
 /// Check if a file is empty
@@ -159,10 +178,26 @@ mod tests {
 
     #[test]
     fn test_is_text_file() -> Result<(), String> {
-        assert_eq!(is_text_file(Path::new("./testdata/text_present")), true);
-        assert_eq!(is_text_file(Path::new("./testdata/text_empty_file")), true);
-        assert_eq!(is_text_file(Path::new("./testdata/not_exist")), false);
-        assert_eq!(is_text_file(Path::new("./testdata/pdf_empty.pdf")), false);
+        let mut data: [u8; 2000] = [0x30; 2000];
+        data[150] = 0;
+
+        assert_eq!(is_text_file(&data, 100), true);
+        assert_eq!(is_text_file(&data, 0), true);
+        assert_eq!(is_text_file(&data, 200), false);
+        Ok(())
+    }
+
+    #[test]
+    fn test_is_pdf_file() -> Result<(), String> {
+        let mut data: [u8; 2000] = [0x30; 2000];
+        assert_eq!(is_pdf_file(&data, 100), false);
+
+        data[0] = b'%';
+        data[1] = b'P';
+        data[2] = b'D';
+        data[3] = b'F';
+        assert_eq!(is_pdf_file(&data, 100), true);
+        assert_eq!(is_pdf_file(&data, 3), false);
         Ok(())
     }
 
@@ -180,6 +215,14 @@ mod tests {
             detect_file_type(Path::new("./testdata/png_empty.png")),
             FileType::Unknown
         );
+        assert_eq!(
+            detect_file_type(Path::new("./testdata/pdf_empty.pdf")),
+            FileType::Pdf
+        );
+        assert_eq!(
+            detect_file_type(Path::new("./testdata/pdf_present.pdf")),
+            FileType::Pdf
+        );
         Ok(())
     }
 
@@ -191,7 +234,7 @@ mod tests {
 
         let res = get_files_list(&config);
 
-        assert_eq!(res.len(), 3);
+        assert_eq!(res.len(), 8);
         Ok(())
     }
 
@@ -204,7 +247,7 @@ mod tests {
 
         let res = get_files_list(&config);
 
-        assert_eq!(res.len(), 2);
+        assert_eq!(res.len(), 7);
         Ok(())
     }
 }
