@@ -1,0 +1,344 @@
+use regex::Regex;
+
+use crate::pan_finder::analyser::analyser_api::*;
+use crate::pan_finder::config::*;
+
+#[derive(Debug)]
+pub struct SubBrand {
+    pub brand: String,
+    pub test_bin: bool,
+    pub bin_list: Vec<String>,
+}
+
+#[derive(Debug)]
+pub struct Pattern {
+    pub brand: String,
+    pub re: Regex,
+    pub sub_brand: Vec<SubBrand>,
+}
+
+/// Search for a more specific brand
+pub fn search_sub_brand(number: &str, pattern: &Pattern) -> Option<PanFound> {
+    for sub_brand in &pattern.sub_brand {
+        for bin in &sub_brand.bin_list {
+            if number.starts_with(bin) {
+                return Some(PanFound {
+                    pan: number.to_string(),
+                    brand: sub_brand.brand.clone(),
+                    test_bin: sub_brand.test_bin,
+                });
+            }
+        }
+    }
+
+    None
+}
+
+/// Analysis a match result to find the precise card brand if any and detect if its a test BIN range
+pub fn check_match(
+    found_number: &str,
+    pattern: &Pattern,
+    config: &Configuration,
+) -> Option<PanFound> {
+    let number: String = found_number
+        .chars()
+        .filter(|c| !c.is_whitespace() && *c != '-')
+        .collect();
+
+    if luhn::valid(&number) {
+        match search_sub_brand(&number, pattern) {
+            Some(mut res) => {
+                res.pan = found_number.to_string();
+
+                // Remove PAN of test card
+                if !config.report_test_bin && res.test_bin {
+                    return None;
+                } else {
+                    return Some(res);
+                }
+            }
+            None => {
+                return Some(PanFound {
+                    pan: found_number.to_string(),
+                    brand: pattern.brand.clone(),
+                    test_bin: false,
+                });
+            }
+        }
+    }
+
+    None
+}
+
+/// Check one of PAN search pattern
+pub fn check_pattern(content: &str, pattern: &Pattern, config: &Configuration) -> Vec<PanFound> {
+    let mut results: Vec<PanFound> = Vec::new();
+
+    let matches: Vec<_> = pattern.re.find_iter(content).map(|m| m.as_str()).collect();
+    for found_number in matches {
+        if let Some(res) = check_match(found_number, pattern, config) {
+            results.push(res);
+        }
+    }
+
+    results
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_search_sub_brand() -> Result<(), String> {
+        let pattern = Pattern {
+            brand: String::from("Credit card"),
+            re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
+            sub_brand: vec![
+                SubBrand {
+                    brand: String::from("BIN 1"),
+                    test_bin: true,
+                    bin_list: vec![String::from("501767")],
+                },
+                SubBrand {
+                    brand: String::from("BIN 2"),
+                    test_bin: false,
+                    bin_list: vec![String::from("507100")],
+                },
+            ],
+        };
+
+        assert!(search_sub_brand("", &pattern).is_none());
+        assert!(search_sub_brand("5117670000000000", &pattern).is_none());
+        assert!(!search_sub_brand("5017670000000000", &pattern).is_none());
+        let result = search_sub_brand("5017670000000000", &pattern).unwrap();
+        assert_eq!(result.brand, String::from("BIN 1"));
+        assert_eq!(result.test_bin, true);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_check_match_wrong_luhn() -> Result<(), String> {
+        let pattern = Pattern {
+            brand: String::from("Credit card"),
+            re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
+            sub_brand: vec![
+                SubBrand {
+                    brand: String::from("BIN 1"),
+                    test_bin: false,
+                    bin_list: vec![String::from("501767")],
+                },
+                SubBrand {
+                    brand: String::from("BIN 2"),
+                    test_bin: false,
+                    bin_list: vec![String::from("507100")],
+                },
+            ],
+        };
+        let config = Configuration::new();
+
+        assert!(check_match("5017670000000001", &pattern, &config).is_none());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_check_match_main_entry() -> Result<(), String> {
+        let pattern = Pattern {
+            brand: String::from("Credit card"),
+            re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
+            sub_brand: vec![
+                SubBrand {
+                    brand: String::from("BIN 1"),
+                    test_bin: false,
+                    bin_list: vec![String::from("501767")],
+                },
+                SubBrand {
+                    brand: String::from("BIN 2"),
+                    test_bin: false,
+                    bin_list: vec![String::from("507100")],
+                },
+            ],
+        };
+        let config = Configuration::new();
+
+        assert!(!check_match("50671700 00000000", &pattern, &config).is_none());
+        let res = check_match("50671700 00000000", &pattern, &config).unwrap();
+        assert_eq!(res.brand, "Credit card");
+        assert_eq!(res.pan, "50671700 00000000");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_check_match_sub_entry() -> Result<(), String> {
+        let pattern = Pattern {
+            brand: String::from("Credit card"),
+            re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
+            sub_brand: vec![
+                SubBrand {
+                    brand: String::from("BIN 1"),
+                    test_bin: false,
+                    bin_list: vec![String::from("501767")],
+                },
+                SubBrand {
+                    brand: String::from("BIN 2"),
+                    test_bin: false,
+                    bin_list: vec![String::from("507100")],
+                },
+            ],
+        };
+        let config = Configuration::new();
+
+        assert!(!check_match("50176700 00000000", &pattern, &config).is_none());
+        let res = check_match("50176700 00000000", &pattern, &config).unwrap();
+        assert_eq!(res.brand, "BIN 1");
+        assert_eq!(res.pan, "50176700 00000000");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_check_match_test_card_not_reported() -> Result<(), String> {
+        let pattern = Pattern {
+            brand: String::from("Credit card"),
+            re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
+            sub_brand: vec![
+                SubBrand {
+                    brand: String::from("BIN 1"),
+                    test_bin: true,
+                    bin_list: vec![String::from("501767")],
+                },
+                SubBrand {
+                    brand: String::from("BIN 2"),
+                    test_bin: false,
+                    bin_list: vec![String::from("507100")],
+                },
+            ],
+        };
+        let config = Configuration::new();
+
+        assert!(check_match("50176700 00000000", &pattern, &config).is_none());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_check_match_test_card_reported() -> Result<(), String> {
+        let pattern = Pattern {
+            brand: String::from("Credit card"),
+            re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
+            sub_brand: vec![
+                SubBrand {
+                    brand: String::from("BIN 1"),
+                    test_bin: true,
+                    bin_list: vec![String::from("501767")],
+                },
+                SubBrand {
+                    brand: String::from("BIN 2"),
+                    test_bin: false,
+                    bin_list: vec![String::from("507100")],
+                },
+            ],
+        };
+        let mut config = Configuration::new();
+        config.report_test_bin = true;
+
+        assert!(!check_match("50176700 00000000", &pattern, &config).is_none());
+        let res = check_match("50176700 00000000", &pattern, &config).unwrap();
+        assert_eq!(res.brand, "BIN 1");
+        assert_eq!(res.pan, "50176700 00000000");
+        assert_eq!(res.test_bin, true);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_check_pattern_empty_file() -> Result<(), String> {
+        let pattern = Pattern {
+            brand: String::from("Credit card"),
+            re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
+            sub_brand: vec![
+                SubBrand {
+                    brand: String::from("BIN 1"),
+                    test_bin: false,
+                    bin_list: vec![String::from("501767")],
+                },
+                SubBrand {
+                    brand: String::from("BIN 2"),
+                    test_bin: false,
+                    bin_list: vec![String::from("507100")],
+                },
+            ],
+        };
+        let config = Configuration::new();
+
+        let content = "";
+        let res = check_pattern(content, &pattern, &config);
+        assert!(res.is_empty());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_check_pattern_not_present() -> Result<(), String> {
+        let pattern = Pattern {
+            brand: String::from("Credit card"),
+            re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
+            sub_brand: vec![
+                SubBrand {
+                    brand: String::from("BIN 1"),
+                    test_bin: false,
+                    bin_list: vec![String::from("501767")],
+                },
+                SubBrand {
+                    brand: String::from("BIN 2"),
+                    test_bin: false,
+                    bin_list: vec![String::from("507100")],
+                },
+            ],
+        };
+        let config = Configuration::new();
+
+        let content = "
+                aaa
+                bbb
+                ccc";
+        let res = check_pattern(content, &pattern, &config);
+        assert!(res.is_empty());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_check_pattern_present() -> Result<(), String> {
+        let pattern = Pattern {
+            brand: String::from("Credit card"),
+            re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
+            sub_brand: vec![
+                SubBrand {
+                    brand: String::from("BIN 1"),
+                    test_bin: false,
+                    bin_list: vec![String::from("501767")],
+                },
+                SubBrand {
+                    brand: String::from("BIN 2"),
+                    test_bin: false,
+                    bin_list: vec![String::from("507100")],
+                },
+            ],
+        };
+        let config = Configuration::new();
+
+        let content = "
+                aaa
+                501767000-0000000
+                bbb
+                5017670000000001
+                ccc";
+        let res = check_pattern(content, &pattern, &config);
+        assert_eq!(res.len(), 1);
+        assert_eq!(res[0].pan, "501767000-0000000");
+
+        Ok(())
+    }
+}

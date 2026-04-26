@@ -25,16 +25,7 @@ pub struct FilesDescription {
 /// Get list of files to analyse
 pub fn get_files_list(config: &Configuration) -> Vec<FilesDescription> {
     let mut files_list: Vec<FilesDescription> = Vec::new();
-    let spinner_style = ProgressStyle::with_template("{prefix:.bold.dim} {spinner} {wide_msg}")
-        .unwrap()
-        .tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ ");
-    let progress_bar = if config.quiet_mode {
-        ProgressBar::hidden()
-    } else {
-        ProgressBar::new(10)
-    };
-    progress_bar.set_style(spinner_style.clone());
-    progress_bar.set_prefix("Build list of files");
+    let progress_bar = init_progress_bar(config.quiet_mode);
 
     for entry in WalkDir::new(&config.search_dir)
         .into_iter()
@@ -57,6 +48,21 @@ pub fn get_files_list(config: &Configuration) -> Vec<FilesDescription> {
     progress_bar.finish_with_message("Done!");
 
     files_list
+}
+
+fn init_progress_bar(quiet_mode: bool) -> ProgressBar {
+    let spinner_style = ProgressStyle::with_template("{prefix:.bold.dim} {spinner} {wide_msg}")
+        .unwrap()
+        .tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ ");
+    let progress_bar = if quiet_mode {
+        ProgressBar::hidden()
+    } else {
+        ProgressBar::new(10)
+    };
+    progress_bar.set_style(spinner_style.clone());
+    progress_bar.set_prefix("Build list of files");
+
+    progress_bar
 }
 
 /// Check is a file or a directory is excluded from analyse

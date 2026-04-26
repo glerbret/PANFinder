@@ -3,11 +3,8 @@ use chrono::*;
 use crate::pan_finder::analyser::*;
 use crate::pan_finder::config::*;
 
-mod output_console;
 use crate::pan_finder::output::output_console::*;
-mod output_text;
 use crate::pan_finder::output::output_text::*;
-mod output_code_climate;
 use crate::pan_finder::output::output_code_climate::*;
 
 pub fn output_result(

@@ -47,18 +47,7 @@ Options:
   -V, --version
           Print version
 
-TOML configuration file can provide parameters inside `parameters` section
-- `search_dir`: name of directory to analyse
-- `exclusion`: list of files and directories exclusion, can be a full path or only part of it (e.g. `.git` to ignore all `.git` subdirectories)
-- `report_test`: report found PAN identified as test card
-- `check_text`: enable analyse of text file
-- `check_pdf`: enable analyse of PDF file
-- `output_console`: enable report on console
-- `output_text`: enable report in text file
-- `text_filename`: name of output file text
-- `output_code_climate`: enable report in Code Climate file
-- `code_climate_filename`: name of output Code Climate file
-
+Parameters can be provided by a TOML configuration file too
 If a parameter is set in both configuration file and command line arguments, the program uses in prior the value in command line arguments
 ```
 

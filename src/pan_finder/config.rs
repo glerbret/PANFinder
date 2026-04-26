@@ -38,7 +38,14 @@ impl Configuration {
 pub fn get_config() -> Configuration {
     let args = Args::parse();
 
-    let mut config = match fs::read_to_string(args.conf_file) {
+    let mut config = read_configuration_file(&args.conf_file);
+    overload_conf_cli(&mut config, &args);
+
+    config
+}
+
+fn read_configuration_file(conf_file: &String) -> Configuration {
+    match fs::read_to_string(conf_file) {
         Ok(conf_file_content) => {
             let config_from_file: ConfigFile = toml::from_str(conf_file_content.as_str()).unwrap();
             if let Some(parameters) = config_from_file.parameters {
@@ -62,12 +69,14 @@ pub fn get_config() -> Configuration {
             }
         }
         Err(_) => Configuration::new(),
-    };
-
-    if let Some(search_dir) = args.search_dir {
-        config.search_dir = search_dir;
     }
-    if let Some(exclusions) = args.exclusions {
+}
+
+fn overload_conf_cli(config: &mut Configuration, args: &Args) {
+    if let Some(search_dir) = &args.search_dir {
+        config.search_dir = search_dir.clone();
+    }
+    if let Some(exclusions) = &args.exclusions {
         config.exclusions = exclusions
             .split(",")
             .map(|s| s.to_string())
@@ -83,14 +92,14 @@ pub fn get_config() -> Configuration {
     if args.text {
         config.output_text = true;
     }
-    if let Some(text_filename) = args.text_filename {
-        config.text_filename = text_filename;
+    if let Some(text_filename) = &args.text_filename {
+        config.text_filename = text_filename.clone();
     }
     if args.code_climate {
         config.output_code_climate = true;
     }
-    if let Some(codeclimate_filename) = args.code_climate_filename {
-        config.code_climate_filename = codeclimate_filename;
+    if let Some(code_climate_filename) = &args.code_climate_filename {
+        config.code_climate_filename = code_climate_filename.clone();
     }
     if args.disable_text_check {
         config.check_text = false;
@@ -98,24 +107,11 @@ pub fn get_config() -> Configuration {
     if args.disable_pdf_check {
         config.check_pdf = false;
     }
-
-    config
 }
 
 /// Configuration from command line
 #[derive(Parser, Debug)]
-#[command(version, about, long_about = None, after_help = "TOML configuration file can provide parameters inside `parameters` section
-- `search_dir`: name of directory to analyse
-- `exclusion`: list of files and directories exclusion, can be a full path or only part of it (e.g. `.git` to ignore all `.git` subdirectories)
-- `report_test`: report found PAN identified as test card
-- `check_text`: enable analyse of text file
-- `check_pdf`: enable analyse of PDF file
-- `output_console`: enable report on console
-- `output_text`: enable report in text file
-- `text_filename`: name of output file text
-- `output_code_climate`: enable report in Code Climate file
-- `code_climate_filename`: name of output Code Climate file
-
+#[command(version, about, long_about = None, after_help = "Parameters can be provided by a TOML configuration file too
 If a parameter is set in both configuration file and command line arguments, the program uses in prior the value in command line arguments")]
 struct Args {
     /// Name of directory to analyse [default: .]
