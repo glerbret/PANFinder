@@ -13,8 +13,8 @@ pub fn analyse_pdf_file(
 ) -> Result<Vec<PanFound>, String> {
     let mut results: Vec<PanFound> = Vec::new();
 
-    let mut doc = get_pdf_doc(file)?;
-    let nb_pages = get_pdf_number_pages(file, &mut doc)?;
+    let doc = get_pdf_doc(file)?;
+    let nb_pages = get_pdf_number_pages(file, &doc)?;
 
     for i in 0..nb_pages {
         match doc.extract_text(i) {
@@ -49,7 +49,7 @@ fn get_pdf_doc(file: &DirEntry) -> Result<PdfDocument, String> {
     }
 }
 
-fn get_pdf_number_pages(file: &DirEntry, doc: &mut PdfDocument) -> Result<usize, String> {
+fn get_pdf_number_pages(file: &DirEntry, doc: &PdfDocument) -> Result<usize, String> {
     match doc.page_count() {
         Ok(nb_pages) => Ok(nb_pages),
         Err(err) => Err(format!(

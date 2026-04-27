@@ -17,12 +17,12 @@ hex = "0.4.3"
 hmac-sha512 = "1.1"
 indicatif = "0.18.4"
 luhn = "1.0"
-pdf_oxide = "0.3.38"
+pdf_oxide = "0.3.39"
 regex = "1.12"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 toml = "1.1"
-walkdir = "2"
+walkdir = "2.5"
 
 [lints.clippy]
 correctness = { level = "deny", priority = -1 }
