@@ -2,5 +2,6 @@
   "cSpell.words": [
     "Subpattern",
     "testdata"
-  ]
+  ],
+  "rust-analyzer.check.command": "clippy"
 }

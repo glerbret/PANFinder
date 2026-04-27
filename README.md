@@ -83,6 +83,7 @@ Parameters live in a `parameters` section:
 
 * [ ] Support more file format (archives and compressed files, ...)
 * [ ] Exclude some PAN (global or per file)
+* [ ] Excel output
 
 ## License
 

@@ -7,7 +7,7 @@ use walkdir::WalkDir;
 
 use crate::pan_finder::config::Configuration;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub enum FileType {
     Unknown,
 
@@ -59,7 +59,7 @@ fn init_progress_bar(quiet_mode: bool) -> ProgressBar {
     } else {
         ProgressBar::new(10)
     };
-    progress_bar.set_style(spinner_style.clone());
+    progress_bar.set_style(spinner_style);
     progress_bar.set_prefix("Build list of files");
 
     progress_bar
@@ -67,18 +67,14 @@ fn init_progress_bar(quiet_mode: bool) -> ProgressBar {
 
 /// Check is a file or a directory is excluded from analyse
 fn is_excluded(entry: &DirEntry, exclusions: &Vec<String>) -> bool {
-    entry
-        .path()
-        .to_str()
-        .map(|s| {
-            for exclusion in exclusions {
-                if s.contains(exclusion) {
-                    return true;
-                }
+    entry.path().to_str().is_some_and(|s| {
+        for exclusion in exclusions {
+            if s.contains(exclusion) {
+                return true;
             }
-            false
-        })
-        .unwrap_or(false)
+        }
+        false
+    })
 }
 
 /// Read the first n bytes of a file
@@ -153,7 +149,7 @@ fn detect_file_type(config: &Configuration, path: &Path) -> FileType {
             }
         }
         Err(error) => {
-            println!("{}", error);
+            println!("{error}");
             FileType::Unknown
         }
     }
@@ -179,40 +175,37 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_is_file_empty() -> Result<(), String> {
-        assert_eq!(is_file_empty(Path::new("./testdata/text_present")), false);
-        assert_eq!(is_file_empty(Path::new("./testdata/text_empty_file")), true);
-        assert_eq!(is_file_empty(Path::new("./testdata/not_exist")), true);
-        Ok(())
+    fn test_is_file_empty() {
+        assert!(!is_file_empty(Path::new("./testdata/text_present")));
+        assert!(is_file_empty(Path::new("./testdata/text_empty_file")));
+        assert!(is_file_empty(Path::new("./testdata/not_exist")));
     }
 
     #[test]
-    fn test_is_text_file() -> Result<(), String> {
+    fn test_is_text_file() {
         let mut data: [u8; 2000] = [0x30; 2000];
         data[150] = 0;
 
-        assert_eq!(is_text_file(&data, 100), true);
-        assert_eq!(is_text_file(&data, 0), true);
-        assert_eq!(is_text_file(&data, 200), false);
-        Ok(())
+        assert!(is_text_file(&data, 100));
+        assert!(is_text_file(&data, 0));
+        assert!(!is_text_file(&data, 200));
     }
 
     #[test]
-    fn test_is_pdf_file() -> Result<(), String> {
+    fn test_is_pdf_file() {
         let mut data: [u8; 2000] = [0x30; 2000];
-        assert_eq!(is_pdf_file(&data, 100), false);
+        assert!(!is_pdf_file(&data, 100));
 
         data[0] = b'%';
         data[1] = b'P';
         data[2] = b'D';
         data[3] = b'F';
-        assert_eq!(is_pdf_file(&data, 100), true);
-        assert_eq!(is_pdf_file(&data, 3), false);
-        Ok(())
+        assert!(is_pdf_file(&data, 100));
+        assert!(!is_pdf_file(&data, 3));
     }
 
     #[test]
-    fn test_detect_file_type_all() -> Result<(), String> {
+    fn test_detect_file_type_all() {
         let config = Configuration::new();
 
         assert_eq!(
@@ -235,11 +228,10 @@ mod tests {
             detect_file_type(&config, Path::new("./testdata/pdf_present.pdf")),
             FileType::Pdf
         );
-        Ok(())
     }
 
     #[test]
-    fn test_detect_file_type_no_text() -> Result<(), String> {
+    fn test_detect_file_type_no_text() {
         let mut config = Configuration::new();
         config.check_text = false;
 
@@ -263,11 +255,10 @@ mod tests {
             detect_file_type(&config, Path::new("./testdata/pdf_present.pdf")),
             FileType::Pdf
         );
-        Ok(())
     }
 
     #[test]
-    fn test_detect_file_type_no_pdf() -> Result<(), String> {
+    fn test_detect_file_type_no_pdf() {
         let mut config = Configuration::new();
         config.check_pdf = false;
 
@@ -291,11 +282,10 @@ mod tests {
             detect_file_type(&config, Path::new("./testdata/pdf_present.pdf")),
             FileType::Unknown
         );
-        Ok(())
     }
 
     #[test]
-    fn test_get_files_list() -> Result<(), String> {
+    fn test_get_files_list() {
         let mut config = Configuration::new();
         config.search_dir = String::from("testdata");
         config.quiet_mode = true;
@@ -303,11 +293,10 @@ mod tests {
         let res = get_files_list(&config);
 
         assert_eq!(res.len(), 8);
-        Ok(())
     }
 
     #[test]
-    fn test_get_files_list_filter() -> Result<(), String> {
+    fn test_get_files_list_filter() {
         let mut config = Configuration::new();
         config.search_dir = String::from("testdata");
         config.exclusions = vec![String::from("ignore")];
@@ -316,6 +305,5 @@ mod tests {
         let res = get_files_list(&config);
 
         assert_eq!(res.len(), 7);
-        Ok(())
     }
 }

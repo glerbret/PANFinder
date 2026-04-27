@@ -3,6 +3,7 @@ use std::fs;
 
 /// Configuration of application
 #[derive(Debug)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct Configuration {
     pub search_dir: String,
     pub exclusions: Vec<String>,
@@ -17,8 +18,8 @@ pub struct Configuration {
     pub code_climate_filename: String,
 }
 impl Configuration {
-    pub fn new() -> Configuration {
-        Configuration {
+    pub fn new() -> Self {
+        Self {
             search_dir: String::from("."),
             exclusions: Vec::new(),
             report_test_bin: false,
@@ -45,12 +46,13 @@ pub fn get_config() -> Configuration {
 }
 
 fn read_configuration_file(conf_file: &String) -> Configuration {
-    match fs::read_to_string(conf_file) {
-        Ok(conf_file_content) => {
+    fs::read_to_string(conf_file).map_or_else(
+        |_| Configuration::new(),
+        |conf_file_content| {
             let config_from_file: ConfigFile = toml::from_str(conf_file_content.as_str()).unwrap();
             if let Some(parameters) = config_from_file.parameters {
                 Configuration {
-                    search_dir: parameters.search_dir.unwrap_or(String::from(".")),
+                    search_dir: parameters.search_dir.unwrap_or_else(|| String::from(".")),
                     exclusions: parameters.exclusions.unwrap_or(Vec::new()),
                     report_test_bin: parameters.report_test.unwrap_or(false),
                     check_text: parameters.check_text.unwrap_or(true),
@@ -67,19 +69,18 @@ fn read_configuration_file(conf_file: &String) -> Configuration {
             } else {
                 Configuration::new()
             }
-        }
-        Err(_) => Configuration::new(),
-    }
+        },
+    )
 }
 
 fn overload_conf_cli(config: &mut Configuration, args: &Args) {
     if let Some(search_dir) = &args.search_dir {
-        config.search_dir = search_dir.clone();
+        config.search_dir.clone_from(search_dir);
     }
     if let Some(exclusions) = &args.exclusions {
         config.exclusions = exclusions
-            .split(",")
-            .map(|s| s.to_string())
+            .split(',')
+            .map(std::string::ToString::to_string)
             .collect::<Vec<String>>();
     }
     if args.report_test {
@@ -93,13 +94,15 @@ fn overload_conf_cli(config: &mut Configuration, args: &Args) {
         config.output_text = true;
     }
     if let Some(text_filename) = &args.text_filename {
-        config.text_filename = text_filename.clone();
+        config.text_filename.clone_from(text_filename);
     }
     if args.code_climate {
         config.output_code_climate = true;
     }
     if let Some(code_climate_filename) = &args.code_climate_filename {
-        config.code_climate_filename = code_climate_filename.clone();
+        config
+            .code_climate_filename
+            .clone_from(code_climate_filename);
     }
     if args.disable_text_check {
         config.check_text = false;
@@ -111,6 +114,7 @@ fn overload_conf_cli(config: &mut Configuration, args: &Args) {
 
 /// Configuration from command line
 #[derive(Parser, Debug)]
+#[allow(clippy::struct_excessive_bools)]
 #[command(version, about, long_about = None, after_help = "Parameters can be provided by a TOML configuration file too
 If a parameter is set in both configuration file and command line arguments, the program uses in prior the value in command line arguments")]
 struct Args {

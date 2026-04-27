@@ -1,4 +1,4 @@
-use chrono::*;
+use chrono::{DateTime, Local};
 use hmac_sha512::Hash;
 use serde_json::json;
 use std::fs::File;
@@ -6,8 +6,8 @@ use std::fs::OpenOptions;
 use std::io::Error;
 use std::io::Write;
 
-use crate::pan_finder::analyser::*;
-use crate::pan_finder::config::*;
+use crate::pan_finder::analyser::{AnalyseResult, FileAnalyseResult};
+use crate::pan_finder::config::Configuration;
 
 pub fn output_code_climate(
     result: &AnalyseResult,
@@ -36,10 +36,10 @@ fn build_filename(
     analyse_datetime: &DateTime<Local>,
     config: &Configuration,
 ) -> Result<File, Error> {
-    let filename = if !config.code_climate_filename.is_empty() {
-        &config.code_climate_filename
-    } else {
+    let filename = if config.code_climate_filename.is_empty() {
         &format!("PANFinder_{}.json", analyse_datetime.format("%Y%m%d%H%M%S"))
+    } else {
+        &config.code_climate_filename
     };
     OpenOptions::new()
         .create_new(true)

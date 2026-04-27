@@ -1,0 +1,2 @@
+allowed-duplicate-crates = ["hashbrown", "wit-bindgen"]
+doc-valid-idents = ["PANFinder"]

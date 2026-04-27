@@ -1,7 +1,7 @@
 use regex::Regex;
 
-use crate::pan_finder::analyser::analyser_api::*;
-use crate::pan_finder::config::*;
+use crate::pan_finder::analyser::analyser_api::PanFound;
+use crate::pan_finder::config::Configuration;
 
 #[derive(Debug)]
 pub struct SubBrand {
@@ -53,9 +53,9 @@ pub fn check_match(
                 // Remove PAN of test card
                 if !config.report_test_bin && res.test_bin {
                     return None;
-                } else {
-                    return Some(res);
                 }
+
+                return Some(res);
             }
             None => {
                 return Some(PanFound {
@@ -88,7 +88,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_search_sub_brand() -> Result<(), String> {
+    fn test_search_sub_brand() {
         let pattern = Pattern {
             brand: String::from("Credit card"),
             re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
@@ -108,16 +108,14 @@ mod tests {
 
         assert!(search_sub_brand("", &pattern).is_none());
         assert!(search_sub_brand("5117670000000000", &pattern).is_none());
-        assert!(!search_sub_brand("5017670000000000", &pattern).is_none());
+        assert!(search_sub_brand("5017670000000000", &pattern).is_some());
         let result = search_sub_brand("5017670000000000", &pattern).unwrap();
         assert_eq!(result.brand, String::from("BIN 1"));
-        assert_eq!(result.test_bin, true);
-
-        Ok(())
+        assert!(result.test_bin);
     }
 
     #[test]
-    fn test_check_match_wrong_luhn() -> Result<(), String> {
+    fn test_check_match_wrong_luhn() {
         let pattern = Pattern {
             brand: String::from("Credit card"),
             re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
@@ -137,12 +135,10 @@ mod tests {
         let config = Configuration::new();
 
         assert!(check_match("5017670000000001", &pattern, &config).is_none());
-
-        Ok(())
     }
 
     #[test]
-    fn test_check_match_main_entry() -> Result<(), String> {
+    fn test_check_match_main_entry() {
         let pattern = Pattern {
             brand: String::from("Credit card"),
             re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
@@ -161,16 +157,14 @@ mod tests {
         };
         let config = Configuration::new();
 
-        assert!(!check_match("50671700 00000000", &pattern, &config).is_none());
+        assert!(check_match("50671700 00000000", &pattern, &config).is_some());
         let res = check_match("50671700 00000000", &pattern, &config).unwrap();
         assert_eq!(res.brand, "Credit card");
         assert_eq!(res.pan, "50671700 00000000");
-
-        Ok(())
     }
 
     #[test]
-    fn test_check_match_sub_entry() -> Result<(), String> {
+    fn test_check_match_sub_entry() {
         let pattern = Pattern {
             brand: String::from("Credit card"),
             re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
@@ -189,16 +183,14 @@ mod tests {
         };
         let config = Configuration::new();
 
-        assert!(!check_match("50176700 00000000", &pattern, &config).is_none());
+        assert!(check_match("50176700 00000000", &pattern, &config).is_some());
         let res = check_match("50176700 00000000", &pattern, &config).unwrap();
         assert_eq!(res.brand, "BIN 1");
         assert_eq!(res.pan, "50176700 00000000");
-
-        Ok(())
     }
 
     #[test]
-    fn test_check_match_test_card_not_reported() -> Result<(), String> {
+    fn test_check_match_test_card_not_reported() {
         let pattern = Pattern {
             brand: String::from("Credit card"),
             re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
@@ -218,12 +210,10 @@ mod tests {
         let config = Configuration::new();
 
         assert!(check_match("50176700 00000000", &pattern, &config).is_none());
-
-        Ok(())
     }
 
     #[test]
-    fn test_check_match_test_card_reported() -> Result<(), String> {
+    fn test_check_match_test_card_reported() {
         let pattern = Pattern {
             brand: String::from("Credit card"),
             re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
@@ -243,17 +233,15 @@ mod tests {
         let mut config = Configuration::new();
         config.report_test_bin = true;
 
-        assert!(!check_match("50176700 00000000", &pattern, &config).is_none());
+        assert!(check_match("50176700 00000000", &pattern, &config).is_some());
         let res = check_match("50176700 00000000", &pattern, &config).unwrap();
         assert_eq!(res.brand, "BIN 1");
         assert_eq!(res.pan, "50176700 00000000");
-        assert_eq!(res.test_bin, true);
-
-        Ok(())
+        assert!(res.test_bin);
     }
 
     #[test]
-    fn test_check_pattern_empty_file() -> Result<(), String> {
+    fn test_check_pattern_empty_file() {
         let pattern = Pattern {
             brand: String::from("Credit card"),
             re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
@@ -275,12 +263,10 @@ mod tests {
         let content = "";
         let res = check_pattern(content, &pattern, &config);
         assert!(res.is_empty());
-
-        Ok(())
     }
 
     #[test]
-    fn test_check_pattern_not_present() -> Result<(), String> {
+    fn test_check_pattern_not_present() {
         let pattern = Pattern {
             brand: String::from("Credit card"),
             re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
@@ -305,12 +291,10 @@ mod tests {
                 ccc";
         let res = check_pattern(content, &pattern, &config);
         assert!(res.is_empty());
-
-        Ok(())
     }
 
     #[test]
-    fn test_check_pattern_present() -> Result<(), String> {
+    fn test_check_pattern_present() {
         let pattern = Pattern {
             brand: String::from("Credit card"),
             re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
@@ -338,7 +322,5 @@ mod tests {
         let res = check_pattern(content, &pattern, &config);
         assert_eq!(res.len(), 1);
         assert_eq!(res[0].pan, "501767000-0000000");
-
-        Ok(())
     }
 }

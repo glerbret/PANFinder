@@ -2,11 +2,11 @@ use indicatif::{ProgressBar, ProgressStyle};
 use regex::Regex;
 use std::vec;
 
-use crate::pan_finder::analyser::common::*;
-use crate::pan_finder::analyser::pdf_analyser::*;
-use crate::pan_finder::analyser::text_analyser::*;
-use crate::pan_finder::config::*;
-use crate::pan_finder::lister::*;
+use crate::pan_finder::analyser::common::{Pattern, SubBrand};
+use crate::pan_finder::analyser::pdf_analyser::analyse_pdf_file;
+use crate::pan_finder::analyser::text_analyser::analyse_text_file;
+use crate::pan_finder::config::Configuration;
+use crate::pan_finder::lister::{FileType, FilesDescription};
 
 #[derive(Debug)]
 pub struct PanFound {
@@ -30,8 +30,8 @@ pub struct AnalyseResult {
     pub results_list: Vec<FileAnalyseResult>,
 }
 impl AnalyseResult {
-    fn new() -> AnalyseResult {
-        AnalyseResult {
+    const fn new() -> Self {
+        Self {
             nb_analyzed_file: 0,
             nb_error: 0,
             nb_found_pan: 0,
@@ -55,8 +55,8 @@ pub fn analyse_files(files_list: Vec<FilesDescription>, config: &Configuration) 
 
         let filename = f.file_entry.path().to_str().unwrap().to_string();
         let result = match f.file_type {
-            FileType::Text => analyse_text_file(f.file_entry, &patterns_list, config),
-            FileType::Pdf => analyse_pdf_file(f.file_entry, &patterns_list, config),
+            FileType::Text => analyse_text_file(&f.file_entry, &patterns_list, config),
+            FileType::Pdf => analyse_pdf_file(&f.file_entry, &patterns_list, config),
             FileType::Unknown => Ok(Vec::new()),
         };
 
@@ -68,7 +68,7 @@ pub fn analyse_files(files_list: Vec<FilesDescription>, config: &Configuration) 
                         filename,
                         error_msg: String::new(),
                         pan_found,
-                    })
+                    });
                 }
             }
             Err(error_msg) => {
@@ -77,7 +77,7 @@ pub fn analyse_files(files_list: Vec<FilesDescription>, config: &Configuration) 
                     filename,
                     error_msg,
                     pan_found: Vec::new(),
-                })
+                });
             }
         }
     }

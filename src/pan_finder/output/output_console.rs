@@ -1,8 +1,8 @@
-use chrono::*;
+use chrono::{DateTime, Local};
 use colored::Colorize;
 
-use crate::pan_finder::analyser::*;
-use crate::pan_finder::config::*;
+use crate::pan_finder::analyser::AnalyseResult;
+use crate::pan_finder::config::Configuration;
 
 pub fn output_console(
     result: &AnalyseResult,
@@ -61,7 +61,7 @@ fn output_pan(result: &AnalyseResult) {
             if !item.pan_found.is_empty() {
                 println!("  {}:", item.filename);
                 for pan in &item.pan_found {
-                    println!("    - {}: {}", pan.brand, pan.pan)
+                    println!("    - {}: {}", pan.brand, pan.pan);
                 }
             }
         }

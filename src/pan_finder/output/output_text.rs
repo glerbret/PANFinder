@@ -1,11 +1,11 @@
-use chrono::*;
+use chrono::{DateTime, Local};
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::Error;
 use std::io::Write;
 
-use crate::pan_finder::analyser::*;
-use crate::pan_finder::config::*;
+use crate::pan_finder::analyser::AnalyseResult;
+use crate::pan_finder::config::Configuration;
 
 pub fn output_text(
     result: &AnalyseResult,
@@ -24,10 +24,10 @@ fn build_filename(
     analyse_datetime: &DateTime<Local>,
     config: &Configuration,
 ) -> Result<File, Error> {
-    let filename = if !config.text_filename.is_empty() {
-        &config.text_filename
-    } else {
+    let filename = if config.text_filename.is_empty() {
         &format!("PANFinder_{}.txt", analyse_datetime.format("%Y%m%d%H%M%S"))
+    } else {
+        &config.text_filename
     };
     OpenOptions::new()
         .create_new(true)
@@ -88,7 +88,7 @@ pub fn output_pan(result: &AnalyseResult, file: &mut File) -> Result<(), Error> 
             if !item.pan_found.is_empty() {
                 writeln!(file, "  {}:", item.filename)?;
                 for pan in &item.pan_found {
-                    writeln!(file, "    - {}: {}", pan.brand, pan.pan)?
+                    writeln!(file, "    - {}: {}", pan.brand, pan.pan)?;
                 }
             }
         }
