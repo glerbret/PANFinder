@@ -4,6 +4,7 @@ use crate::pan_finder::analyser::AnalyseResult;
 use crate::pan_finder::config::Configuration;
 use crate::pan_finder::output::output_code_climate::output_code_climate;
 use crate::pan_finder::output::output_console::output_console;
+use crate::pan_finder::output::output_excel::output_excel;
 use crate::pan_finder::output::output_text::output_text;
 
 pub fn output_result(
@@ -23,5 +24,10 @@ pub fn output_result(
     if config.output_code_climate {
         output_code_climate(result, &analyse_datetime, config)
             .unwrap_or_else(|error| println!("Error writing Code Climate file result: {error}"));
+    }
+
+    if config.output_excel {
+        output_excel(result, &analyse_datetime, config)
+            .unwrap_or_else(|error| println!("Error writing Excel file result: {error}"));
     }
 }

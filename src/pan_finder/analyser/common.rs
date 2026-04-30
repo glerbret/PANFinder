@@ -248,7 +248,8 @@ mod tests {
 
         {
             let mut excluded_pan_per_file = HashMap::new();
-            excluded_pan_per_file.insert(String::from("file"), vec![String::from("5017670000000000")]);
+            excluded_pan_per_file
+                .insert(String::from("file"), vec![String::from("5017670000000000")]);
             let mut config = Configuration::new();
             config.excluded_pan_per_file = excluded_pan_per_file;
             assert!(check_match("5017670000000000", &pattern, &config, "file").is_none());
@@ -256,7 +257,8 @@ mod tests {
 
         {
             let mut excluded_pan_per_file = HashMap::new();
-            excluded_pan_per_file.insert(String::from("file"), vec![String::from("5017670000000000")]);
+            excluded_pan_per_file
+                .insert(String::from("file"), vec![String::from("5017670000000000")]);
             let mut config = Configuration::new();
             config.excluded_pan_per_file = excluded_pan_per_file;
             assert!(check_match("501767000-0000000", &pattern, &config, "file").is_none());
@@ -272,7 +274,8 @@ mod tests {
 
         {
             let mut excluded_pan_per_file = HashMap::new();
-            excluded_pan_per_file.insert(String::from("file"), vec![String::from("5017670000000018")]);
+            excluded_pan_per_file
+                .insert(String::from("file"), vec![String::from("5017670000000018")]);
             let mut config = Configuration::new();
             config.excluded_pan_per_file = excluded_pan_per_file;
             assert!(check_match("5017670000000000", &pattern, &config, "file").is_some());
@@ -280,7 +283,8 @@ mod tests {
 
         {
             let mut excluded_pan_per_file = HashMap::new();
-            excluded_pan_per_file.insert(String::from("file"), vec![String::from("5017670000000000")]);
+            excluded_pan_per_file
+                .insert(String::from("file"), vec![String::from("5017670000000000")]);
             let mut config = Configuration::new();
             config.excluded_pan_per_file = excluded_pan_per_file;
             assert!(check_match("5017670000000000", &pattern, &config, "other").is_some());

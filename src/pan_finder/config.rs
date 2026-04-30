@@ -16,6 +16,8 @@ pub struct Configuration {
     pub output_console: bool,
     pub output_text: bool,
     pub text_filename: String,
+    pub output_excel: bool,
+    pub excel_filename: String,
     pub output_code_climate: bool,
     pub code_climate_filename: String,
     pub excluded_pan: Vec<String>,
@@ -33,6 +35,8 @@ impl Configuration {
             output_console: true,
             output_text: false,
             text_filename: String::new(),
+            output_excel: false,
+            excel_filename: String::new(),
             output_code_climate: false,
             code_climate_filename: String::new(),
             excluded_pan: Vec::new(),
@@ -86,6 +90,12 @@ fn read_configuration_file(config: &mut Configuration, conf_file: &String) {
             }
             if parameters.contains_key("text_filename") {
                 config.text_filename = parameters["text_filename"].as_str().unwrap().to_string();
+            }
+            if parameters.contains_key("output_excel") {
+                config.output_excel = parameters["output_excel"].as_bool().unwrap();
+            }
+            if parameters.contains_key("excel_filename") {
+                config.excel_filename = parameters["excel_filename"].as_str().unwrap().to_string();
             }
             if parameters.contains_key("output_code_climate") {
                 config.output_code_climate = parameters["output_code_climate"].as_bool().unwrap();
@@ -157,6 +167,12 @@ fn overload_conf_cli(config: &mut Configuration, args: &Args) {
     if let Some(text_filename) = &args.text_filename {
         config.text_filename.clone_from(text_filename);
     }
+    if args.excel {
+        config.output_excel = true;
+    }
+    if let Some(excel_filename) = &args.excel_filename {
+        config.excel_filename.clone_from(excel_filename);
+    }
     if args.code_climate {
         config.output_code_climate = true;
     }
@@ -198,6 +214,14 @@ struct Args {
     /// Name of output text file [default: PANFinder_<datetime>.txt]
     #[arg(long)]
     text_filename: Option<String>,
+
+    /// Enable XLSX file report
+    #[arg(long, default_value_t = false)]
+    excel: bool,
+
+    /// Name of output XLSX file [default: PANFinder_<datetime>.json]
+    #[arg(long)]
+    excel_filename: Option<String>,
 
     /// Enable Code Climate file report
     #[arg(long, default_value_t = false)]

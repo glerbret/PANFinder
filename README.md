@@ -28,6 +28,10 @@ Options:
           Enable text file report
       --text-filename <TEXT_FILENAME>
           Name of output text file [default: PANFinder_<datetime>.txt]
+      --excel
+          Enable XLSX file report
+      --excel-filename <EXCEL_FILENAME>
+          Name of output XLSX file [default: PANFinder_<datetime>.xlsx]
       --code-climate
           Enable Code Climate file report
       --code-climate-filename <CODE_CLIMATE_FILENAME>
@@ -71,6 +75,8 @@ Parameters live in a `parameters` section:
 * `output_console`: enable report on console
 * `output_text`: enable report in text file
 * `text_filename`: name of output file text
+* `output_excel`: enable report in XLSX file
+* `excel_filename`: name of output XLSX file
 * `output_code_climate`: enable report in Code Climate file
 * `code_climate_filename`: name of output Code Climate file
 
