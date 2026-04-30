@@ -17,6 +17,7 @@ pub struct Configuration {
     pub text_filename: String,
     pub output_code_climate: bool,
     pub code_climate_filename: String,
+    pub excluded_pan: Vec<String>,
 }
 impl Configuration {
     pub fn new() -> Self {
@@ -32,6 +33,7 @@ impl Configuration {
             text_filename: String::new(),
             output_code_climate: false,
             code_climate_filename: String::new(),
+            excluded_pan: Vec::new(),
         }
     }
 }
@@ -97,6 +99,14 @@ fn read_configuration_file(config: &mut Configuration, conf_file: &String) {
             let exclusions = exclusions.as_table().unwrap();
             if exclusions.contains_key("path") {
                 config.excluded_path = exclusions["path"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|e| e.as_str().unwrap().to_string())
+                    .collect();
+            }
+            if exclusions.contains_key("pan") {
+                config.excluded_pan = exclusions["pan"]
                     .as_array()
                     .unwrap()
                     .iter()

@@ -77,6 +77,7 @@ Parameters live in a `parameters` section:
 Exclusion live in a `exclusions` section:
 
 * `path`: list of files and subdirectories (full path or part of path) to ignore in analyse
+* `pan`: list of PAN (or beginning of PAN) to exclude
 
 ## Known limitations
 

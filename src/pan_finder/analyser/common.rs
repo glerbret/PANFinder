@@ -45,7 +45,7 @@ pub fn check_match(
         .filter(|c| !c.is_whitespace() && *c != '-')
         .collect();
 
-    if luhn::valid(&number) {
+    if luhn::valid(&number) && !is_excluded(&number, &config.excluded_pan) {
         match search_sub_brand(&number, pattern) {
             Some(mut res) => {
                 res.pan = found_number.to_string();
@@ -83,6 +83,17 @@ pub fn check_pattern(content: &str, pattern: &Pattern, config: &Configuration) -
 
     results
 }
+
+/// Exclude some PAN from result search
+fn is_excluded(number: &str, excluded_pan: &Vec<String>) -> bool {
+    for pan in excluded_pan {
+        if number.starts_with(pan) {
+            return true;
+        }
+    }
+    false
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -135,6 +146,50 @@ mod tests {
         let config = Configuration::new();
 
         assert!(check_match("5017670000000001", &pattern, &config).is_none());
+    }
+
+    #[test]
+    fn test_check_match_excluded_pan_global() {
+        let pattern = Pattern {
+            brand: String::from("Credit card"),
+            re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
+            sub_brand: vec![
+                SubBrand {
+                    brand: String::from("BIN 1"),
+                    test_bin: false,
+                    bin_list: vec![String::from("501767")],
+                },
+                SubBrand {
+                    brand: String::from("BIN 2"),
+                    test_bin: false,
+                    bin_list: vec![String::from("507100")],
+                },
+            ],
+        };
+
+        {
+            let mut config = Configuration::new();
+            config.excluded_pan = vec![String::from("5017670000000000")];
+            assert!(check_match("5017670000000000", &pattern, &config).is_none());
+        }
+
+        {
+            let mut config = Configuration::new();
+            config.excluded_pan = vec![String::from("5017670000000000")];
+            assert!(check_match("501767000-0000000", &pattern, &config).is_none());
+        }
+
+        {
+            let mut config = Configuration::new();
+            config.excluded_pan = vec![String::from("50176700")];
+            assert!(check_match("5017670000000000", &pattern, &config).is_none());
+        }
+
+        {
+            let mut config = Configuration::new();
+            config.excluded_pan = vec![String::from("5017670000000018")];
+            assert!(check_match("5017670000000000", &pattern, &config).is_some());
+        }
     }
 
     #[test]
