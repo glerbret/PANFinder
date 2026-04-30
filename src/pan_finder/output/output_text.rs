@@ -70,7 +70,7 @@ fn output_error(result: &AnalyseResult, file: &mut File) -> Result<(), Error> {
         writeln!(file, "{} analyse errors", result.nb_error)?;
         for item in &result.results_list {
             if !item.error_msg.is_empty() {
-                writeln!(file, "  {}: {}", item.filename, item.error_msg)?;
+                writeln!(file, "  * {}: {}", item.filename, item.error_msg)?;
             }
         }
     }
@@ -86,7 +86,7 @@ pub fn output_pan(result: &AnalyseResult, file: &mut File) -> Result<(), Error> 
         writeln!(file, "{} PAN found", result.nb_found_pan)?;
         for item in &result.results_list {
             if !item.pan_found.is_empty() {
-                writeln!(file, "  {}:", item.filename)?;
+                writeln!(file, "  * {}:", item.filename)?;
                 for pan in &item.pan_found {
                     writeln!(file, "    - {}: {}", pan.brand, pan.pan)?;
                 }

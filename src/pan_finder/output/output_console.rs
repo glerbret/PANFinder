@@ -43,7 +43,7 @@ fn output_error(result: &AnalyseResult) {
         );
         for item in &result.results_list {
             if !item.error_msg.is_empty() {
-                println!("  {}: {}", item.filename, item.error_msg);
+                println!("  * {}: {}", item.filename, item.error_msg);
             }
         }
     }
@@ -59,7 +59,7 @@ fn output_pan(result: &AnalyseResult) {
         );
         for item in &result.results_list {
             if !item.pan_found.is_empty() {
-                println!("  {}:", item.filename);
+                println!("  * {}:", item.filename);
                 for pan in &item.pan_found {
                     println!("    - {}: {}", pan.brand, pan.pan);
                 }
