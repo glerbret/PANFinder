@@ -29,7 +29,7 @@ pub fn get_files_list(config: &Configuration) -> Vec<FilesDescription> {
 
     for entry in WalkDir::new(&config.search_dir)
         .into_iter()
-        .filter_entry(|entry| !is_excluded(entry, &config.exclusions))
+        .filter_entry(|entry| !is_excluded(entry, &config.excluded_path))
     {
         progress_bar.set_message("In progress...");
         progress_bar.inc(1);
@@ -275,7 +275,7 @@ mod tests {
     fn test_get_files_list_filter() {
         let mut config = Configuration::new();
         config.search_dir = String::from("testdata/lister");
-        config.exclusions = vec![String::from("ignore")];
+        config.excluded_path = vec![String::from("ignore")];
         config.quiet_mode = true;
 
         let res = get_files_list(&config);

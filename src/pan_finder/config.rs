@@ -1,12 +1,13 @@
 use clap::Parser;
 use std::fs;
+use toml::Table;
 
 /// Configuration of application
 #[derive(Debug)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct Configuration {
     pub search_dir: String,
-    pub exclusions: Vec<String>,
+    pub excluded_path: Vec<String>,
     pub report_test_bin: bool,
     pub check_text: bool,
     pub check_pdf: bool,
@@ -21,7 +22,7 @@ impl Configuration {
     pub fn new() -> Self {
         Self {
             search_dir: String::from("."),
-            exclusions: Vec::new(),
+            excluded_path: Vec::new(),
             report_test_bin: false,
             check_text: true,
             check_pdf: true,
@@ -39,38 +40,71 @@ impl Configuration {
 pub fn get_config() -> Configuration {
     let args = Args::parse();
 
-    let mut config = read_configuration_file(&args.conf_file);
+    let mut config = Configuration::new();
+    read_configuration_file(&mut config, &args.conf_file);
     overload_conf_cli(&mut config, &args);
 
     config
 }
 
-fn read_configuration_file(conf_file: &String) -> Configuration {
-    fs::read_to_string(conf_file).map_or_else(
-        |_| Configuration::new(),
-        |conf_file_content| {
-            let config_from_file: ConfigFile = toml::from_str(conf_file_content.as_str()).unwrap();
-            if let Some(parameters) = config_from_file.parameters {
-                Configuration {
-                    search_dir: parameters.search_dir.unwrap_or_else(|| String::from(".")),
-                    exclusions: parameters.exclusions.unwrap_or(Vec::new()),
-                    report_test_bin: parameters.report_test.unwrap_or(false),
-                    check_text: parameters.check_text.unwrap_or(true),
-                    check_pdf: parameters.check_pdf.unwrap_or(true),
-                    quiet_mode: false,
-                    output_console: parameters.output_console.unwrap_or(true),
-                    output_text: parameters.output_text.unwrap_or(false),
-                    text_filename: parameters.text_filename.unwrap_or(String::new()),
-                    output_code_climate: parameters.output_code_climate.unwrap_or(false),
-                    code_climate_filename: parameters
-                        .code_climate_filename
-                        .unwrap_or(String::new()),
-                }
-            } else {
-                Configuration::new()
+fn read_configuration_file(config: &mut Configuration, conf_file: &String) {
+    if let Ok(conf_file_content) = fs::read_to_string(conf_file) {
+        let config_from_file = conf_file_content.parse::<Table>().unwrap();
+
+        if let Some(parameters) = config_from_file.get("parameters") {
+            let parameters = parameters.as_table().unwrap();
+            if parameters.contains_key("search_dir") {
+                config.search_dir = parameters["search_dir"].as_str().unwrap().to_string();
             }
-        },
-    )
+            if parameters.contains_key("exclusions") {
+                config.excluded_path = parameters["exclusions"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|e| e.as_str().unwrap().to_string())
+                    .collect();
+            }
+            if parameters.contains_key("report_test") {
+                config.report_test_bin = parameters["report_test"].as_bool().unwrap();
+            }
+            if parameters.contains_key("check_text") {
+                config.check_text = parameters["check_text"].as_bool().unwrap();
+            }
+            if parameters.contains_key("check_pdf") {
+                config.check_pdf = parameters["check_pdf"].as_bool().unwrap();
+            }
+            if parameters.contains_key("output_console") {
+                config.output_console = parameters["output_console"].as_bool().unwrap();
+            }
+            if parameters.contains_key("output_text") {
+                config.output_text = parameters["output_text"].as_bool().unwrap();
+            }
+            if parameters.contains_key("text_filename") {
+                config.text_filename = parameters["text_filename"].as_str().unwrap().to_string();
+            }
+            if parameters.contains_key("output_code_climate") {
+                config.output_code_climate = parameters["output_code_climate"].as_bool().unwrap();
+            }
+            if parameters.contains_key("code_climate_filename") {
+                config.code_climate_filename = parameters["code_climate_filename"]
+                    .as_str()
+                    .unwrap()
+                    .to_string();
+            }
+        }
+
+        if let Some(exclusions) = config_from_file.get("exclusions") {
+            let exclusions = exclusions.as_table().unwrap();
+            if exclusions.contains_key("path") {
+                config.excluded_path = exclusions["path"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|e| e.as_str().unwrap().to_string())
+                    .collect();
+            }
+        }
+    }
 }
 
 fn overload_conf_cli(config: &mut Configuration, args: &Args) {
@@ -78,7 +112,7 @@ fn overload_conf_cli(config: &mut Configuration, args: &Args) {
         config.search_dir.clone_from(search_dir);
     }
     if let Some(exclusions) = &args.exclusions {
-        config.exclusions = exclusions
+        config.excluded_path = exclusions
             .split(',')
             .map(std::string::ToString::to_string)
             .collect::<Vec<String>>();
@@ -165,25 +199,4 @@ struct Args {
     /// Name of configuration file
     #[arg(short, long, default_value_t = String::from("./PANFinder.toml"))]
     conf_file: String,
-}
-
-/// `Parameters` section of configuration file
-#[derive(Debug, serde::Deserialize)]
-struct ParametersConfigFile {
-    search_dir: Option<String>,
-    exclusions: Option<Vec<String>>,
-    report_test: Option<bool>,
-    check_text: Option<bool>,
-    check_pdf: Option<bool>,
-    output_console: Option<bool>,
-    output_text: Option<bool>,
-    text_filename: Option<String>,
-    output_code_climate: Option<bool>,
-    code_climate_filename: Option<String>,
-}
-
-/// Configuration from file
-#[derive(Debug, serde::Deserialize)]
-struct ConfigFile {
-    parameters: Option<ParametersConfigFile>,
 }

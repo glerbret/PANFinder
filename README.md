@@ -65,7 +65,6 @@ Program can be parameterized with a TOML configuration file (`./PANFinder.toml` 
 Parameters live in a `parameters` section:
 
 * `search_dir`: name of directory to analyse
-* `exclusion`: list of files and subdirectories (full path or part of path) to ignore in analyse
 * `report_test`: report found PAN identified as test card
 * `check_text`: enable analyse of text file
 * `check_pdf`: enable analyse of PDF file
@@ -74,6 +73,10 @@ Parameters live in a `parameters` section:
 * `text_filename`: name of output file text
 * `output_code_climate`: enable report in Code Climate file
 * `code_climate_filename`: name of output Code Climate file
+
+Exclusion live in a `exclusions` section:
+
+* `path`: list of files and subdirectories (full path or part of path) to ignore in analyse
 
 ## Known limitations
 

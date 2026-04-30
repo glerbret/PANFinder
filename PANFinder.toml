@@ -1,2 +1,6 @@
 [parameters]
-exclusions = [".git", ".svn"]
+search_dir = "testdata"
+report_test = true
+
+[exclusions]
+path = ["lister", "source"]
