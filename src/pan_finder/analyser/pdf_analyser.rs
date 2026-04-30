@@ -20,7 +20,8 @@ pub fn analyse_pdf_file(
         match doc.extract_text(i) {
             Ok(content) => {
                 for pattern in patterns_list {
-                    let mut res = check_pattern(&content, pattern, config);
+                    let mut res =
+                        check_pattern(&content, pattern, config, file.path().to_str().unwrap());
                     results.append(&mut res);
                 }
             }

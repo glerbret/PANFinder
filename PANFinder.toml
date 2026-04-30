@@ -5,3 +5,4 @@ report_test = true
 [exclusions]
 path = ["lister", "source"]
 pan = ["501767000000001"]
+"pan_testdata/pdf_present.pdf" = ["5017670000000000"]

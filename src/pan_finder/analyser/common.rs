@@ -1,4 +1,5 @@
 use regex::Regex;
+use std::collections::HashMap;
 
 use crate::pan_finder::analyser::analyser_api::PanFound;
 use crate::pan_finder::config::Configuration;
@@ -39,13 +40,21 @@ pub fn check_match(
     found_number: &str,
     pattern: &Pattern,
     config: &Configuration,
+    filename: &str,
 ) -> Option<PanFound> {
     let number: String = found_number
         .chars()
         .filter(|c| !c.is_whitespace() && *c != '-')
         .collect();
 
-    if luhn::valid(&number) && !is_excluded(&number, &config.excluded_pan) {
+    if luhn::valid(&number)
+        && !is_excluded(
+            &number,
+            filename,
+            &config.excluded_pan,
+            &config.excluded_pan_per_file,
+        )
+    {
         match search_sub_brand(&number, pattern) {
             Some(mut res) => {
                 res.pan = found_number.to_string();
@@ -71,12 +80,17 @@ pub fn check_match(
 }
 
 /// Check one of PAN search pattern
-pub fn check_pattern(content: &str, pattern: &Pattern, config: &Configuration) -> Vec<PanFound> {
+pub fn check_pattern(
+    content: &str,
+    pattern: &Pattern,
+    config: &Configuration,
+    filename: &str,
+) -> Vec<PanFound> {
     let mut results: Vec<PanFound> = Vec::new();
 
     let matches: Vec<_> = pattern.re.find_iter(content).map(|m| m.as_str()).collect();
     for found_number in matches {
-        if let Some(res) = check_match(found_number, pattern, config) {
+        if let Some(res) = check_match(found_number, pattern, config, filename) {
             results.push(res);
         }
     }
@@ -84,11 +98,32 @@ pub fn check_pattern(content: &str, pattern: &Pattern, config: &Configuration) -
     results
 }
 
-/// Exclude some PAN from result search
-fn is_excluded(number: &str, excluded_pan: &Vec<String>) -> bool {
+/// Exclude some PAN from result search (global and per file)
+fn is_excluded(
+    number: &str,
+    filename: &str,
+    excluded_pan: &Vec<String>,
+    excluded_pan_per_file: &HashMap<String, Vec<String>>,
+) -> bool {
     for pan in excluded_pan {
         if number.starts_with(pan) {
             return true;
+        }
+    }
+
+    if !excluded_pan_per_file.is_empty() {
+        // Replace \ per / to accept both Linux and Windows path format
+        let key: String = filename
+            .chars()
+            .map(|c| if c == '\\' { '/' } else { c })
+            .collect();
+
+        if excluded_pan_per_file.contains_key(&key) {
+            for pan in &excluded_pan_per_file[&key] {
+                if number.starts_with(pan) {
+                    return true;
+                }
+            }
         }
     }
     false
@@ -145,7 +180,7 @@ mod tests {
         };
         let config = Configuration::new();
 
-        assert!(check_match("5017670000000001", &pattern, &config).is_none());
+        assert!(check_match("5017670000000001", &pattern, &config, "").is_none());
     }
 
     #[test]
@@ -170,25 +205,85 @@ mod tests {
         {
             let mut config = Configuration::new();
             config.excluded_pan = vec![String::from("5017670000000000")];
-            assert!(check_match("5017670000000000", &pattern, &config).is_none());
+            assert!(check_match("5017670000000000", &pattern, &config, "").is_none());
         }
 
         {
             let mut config = Configuration::new();
             config.excluded_pan = vec![String::from("5017670000000000")];
-            assert!(check_match("501767000-0000000", &pattern, &config).is_none());
+            assert!(check_match("501767000-0000000", &pattern, &config, "").is_none());
         }
 
         {
             let mut config = Configuration::new();
             config.excluded_pan = vec![String::from("50176700")];
-            assert!(check_match("5017670000000000", &pattern, &config).is_none());
+            assert!(check_match("5017670000000000", &pattern, &config, "").is_none());
         }
 
         {
             let mut config = Configuration::new();
             config.excluded_pan = vec![String::from("5017670000000018")];
-            assert!(check_match("5017670000000000", &pattern, &config).is_some());
+            assert!(check_match("5017670000000000", &pattern, &config, "").is_some());
+        }
+    }
+
+    #[test]
+    fn test_check_match_excluded_pan_per_file() {
+        let pattern = Pattern {
+            brand: String::from("Credit card"),
+            re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
+            sub_brand: vec![
+                SubBrand {
+                    brand: String::from("BIN 1"),
+                    test_bin: false,
+                    bin_list: vec![String::from("501767")],
+                },
+                SubBrand {
+                    brand: String::from("BIN 2"),
+                    test_bin: false,
+                    bin_list: vec![String::from("507100")],
+                },
+            ],
+        };
+
+        {
+            let mut excluded_pan_per_file = HashMap::new();
+            excluded_pan_per_file.insert(String::from("file"), vec![String::from("5017670000000000")]);
+            let mut config = Configuration::new();
+            config.excluded_pan_per_file = excluded_pan_per_file;
+            assert!(check_match("5017670000000000", &pattern, &config, "file").is_none());
+        }
+
+        {
+            let mut excluded_pan_per_file = HashMap::new();
+            excluded_pan_per_file.insert(String::from("file"), vec![String::from("5017670000000000")]);
+            let mut config = Configuration::new();
+            config.excluded_pan_per_file = excluded_pan_per_file;
+            assert!(check_match("501767000-0000000", &pattern, &config, "file").is_none());
+        }
+
+        {
+            let mut excluded_pan_per_file = HashMap::new();
+            excluded_pan_per_file.insert(String::from("file"), vec![String::from("501767")]);
+            let mut config = Configuration::new();
+            config.excluded_pan_per_file = excluded_pan_per_file;
+            assert!(check_match("5017670000000000", &pattern, &config, "file").is_none());
+        }
+
+        {
+            let mut excluded_pan_per_file = HashMap::new();
+            excluded_pan_per_file.insert(String::from("file"), vec![String::from("5017670000000018")]);
+            let mut config = Configuration::new();
+            config.excluded_pan_per_file = excluded_pan_per_file;
+            assert!(check_match("5017670000000000", &pattern, &config, "file").is_some());
+        }
+
+        {
+            let mut excluded_pan_per_file = HashMap::new();
+            excluded_pan_per_file.insert(String::from("file"), vec![String::from("5017670000000000")]);
+            let mut config = Configuration::new();
+            config.excluded_pan_per_file = excluded_pan_per_file;
+            assert!(check_match("5017670000000000", &pattern, &config, "other").is_some());
         }
     }
 
@@ -212,8 +307,8 @@ mod tests {
         };
         let config = Configuration::new();
 
-        assert!(check_match("50671700 00000000", &pattern, &config).is_some());
-        let res = check_match("50671700 00000000", &pattern, &config).unwrap();
+        assert!(check_match("50671700 00000000", &pattern, &config, "").is_some());
+        let res = check_match("50671700 00000000", &pattern, &config, "").unwrap();
         assert_eq!(res.brand, "Credit card");
         assert_eq!(res.pan, "50671700 00000000");
     }
@@ -238,8 +333,8 @@ mod tests {
         };
         let config = Configuration::new();
 
-        assert!(check_match("50176700 00000000", &pattern, &config).is_some());
-        let res = check_match("50176700 00000000", &pattern, &config).unwrap();
+        assert!(check_match("50176700 00000000", &pattern, &config, "").is_some());
+        let res = check_match("50176700 00000000", &pattern, &config, "").unwrap();
         assert_eq!(res.brand, "BIN 1");
         assert_eq!(res.pan, "50176700 00000000");
     }
@@ -264,7 +359,7 @@ mod tests {
         };
         let config = Configuration::new();
 
-        assert!(check_match("50176700 00000000", &pattern, &config).is_none());
+        assert!(check_match("50176700 00000000", &pattern, &config, "").is_none());
     }
 
     #[test]
@@ -288,8 +383,8 @@ mod tests {
         let mut config = Configuration::new();
         config.report_test_bin = true;
 
-        assert!(check_match("50176700 00000000", &pattern, &config).is_some());
-        let res = check_match("50176700 00000000", &pattern, &config).unwrap();
+        assert!(check_match("50176700 00000000", &pattern, &config, "").is_some());
+        let res = check_match("50176700 00000000", &pattern, &config, "").unwrap();
         assert_eq!(res.brand, "BIN 1");
         assert_eq!(res.pan, "50176700 00000000");
         assert!(res.test_bin);
@@ -316,7 +411,7 @@ mod tests {
         let config = Configuration::new();
 
         let content = "";
-        let res = check_pattern(content, &pattern, &config);
+        let res = check_pattern(content, &pattern, &config, "");
         assert!(res.is_empty());
     }
 
@@ -344,7 +439,7 @@ mod tests {
                 aaa
                 bbb
                 ccc";
-        let res = check_pattern(content, &pattern, &config);
+        let res = check_pattern(content, &pattern, &config, "");
         assert!(res.is_empty());
     }
 
@@ -374,7 +469,7 @@ mod tests {
                 bbb
                 5017670000000001
                 ccc";
-        let res = check_pattern(content, &pattern, &config);
+        let res = check_pattern(content, &pattern, &config, "");
         assert_eq!(res.len(), 1);
         assert_eq!(res[0].pan, "501767000-0000000");
     }

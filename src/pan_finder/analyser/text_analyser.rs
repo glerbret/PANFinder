@@ -16,7 +16,8 @@ pub fn analyse_text_file(
             let mut results: Vec<PanFound> = Vec::new();
 
             for pattern in patterns_list {
-                let mut res = check_pattern(&content, pattern, config);
+                let mut res =
+                    check_pattern(&content, pattern, config, file.path().to_str().unwrap());
                 results.append(&mut res);
             }
             Ok(results)

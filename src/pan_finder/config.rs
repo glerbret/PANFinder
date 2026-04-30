@@ -1,4 +1,5 @@
 use clap::Parser;
+use std::collections::HashMap;
 use std::fs;
 use toml::Table;
 
@@ -18,6 +19,7 @@ pub struct Configuration {
     pub output_code_climate: bool,
     pub code_climate_filename: String,
     pub excluded_pan: Vec<String>,
+    pub excluded_pan_per_file: HashMap<String, Vec<String>>,
 }
 impl Configuration {
     pub fn new() -> Self {
@@ -34,6 +36,7 @@ impl Configuration {
             output_code_climate: false,
             code_climate_filename: String::new(),
             excluded_pan: Vec::new(),
+            excluded_pan_per_file: HashMap::new(),
         }
     }
 }
@@ -112,6 +115,20 @@ fn read_configuration_file(config: &mut Configuration, conf_file: &String) {
                     .iter()
                     .map(|e| e.as_str().unwrap().to_string())
                     .collect();
+            }
+            for item in exclusions {
+                if item.0.starts_with("pan_") {
+                    let excluded_pan: Vec<String> = item
+                        .1
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|e| e.as_str().unwrap().to_string())
+                        .collect();
+                    config
+                        .excluded_pan_per_file
+                        .insert(item.0[4..].to_string(), excluded_pan);
+                }
             }
         }
     }

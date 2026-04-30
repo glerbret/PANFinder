@@ -78,6 +78,9 @@ Exclusion live in a `exclusions` section:
 
 * `path`: list of files and subdirectories (full path or part of path) to ignore in analyse
 * `pan`: list of PAN (or beginning of PAN) to exclude
+* `pan_<filename>`: list of PAN (or beginning of PAN) to exclude for a given file
+
+_Note:_ `filename` must be enclosed by `"` and use `/` as path separator
 
 ## Known limitations
 
@@ -86,7 +89,6 @@ Exclusion live in a `exclusions` section:
 ## Future evolution
 
 * [ ] Support more file format (archives and compressed files, ...)
-* [ ] Exclude some PAN (global or per file)
 * [ ] Excel output
 
 ## License
