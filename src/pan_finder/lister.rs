@@ -176,9 +176,9 @@ mod tests {
 
     #[test]
     fn test_is_file_empty() {
-        assert!(!is_file_empty(Path::new("./testdata/text_present")));
-        assert!(is_file_empty(Path::new("./testdata/text_empty_file")));
-        assert!(is_file_empty(Path::new("./testdata/not_exist")));
+        assert!(!is_file_empty(Path::new("./testdata/lister/text_file.txt")));
+        assert!(is_file_empty(Path::new("./testdata/lister/empty_file")));
+        assert!(is_file_empty(Path::new("./testdata/lister/not_exist")));
     }
 
     #[test]
@@ -209,23 +209,15 @@ mod tests {
         let config = Configuration::new();
 
         assert_eq!(
-            detect_file_type(&config, Path::new("./testdata/text_present")),
+            detect_file_type(&config, Path::new("./testdata/lister/text_file.txt")),
             FileType::Text
         );
         assert_eq!(
-            detect_file_type(&config, Path::new("./testdata/text_empty_file")),
-            FileType::Text
-        );
-        assert_eq!(
-            detect_file_type(&config, Path::new("./testdata/png_empty.png")),
+            detect_file_type(&config, Path::new("./testdata/lister/png_file.png")),
             FileType::Unknown
         );
         assert_eq!(
-            detect_file_type(&config, Path::new("./testdata/pdf_empty.pdf")),
-            FileType::Pdf
-        );
-        assert_eq!(
-            detect_file_type(&config, Path::new("./testdata/pdf_present.pdf")),
+            detect_file_type(&config, Path::new("./testdata/lister/pdf_file.pdf")),
             FileType::Pdf
         );
     }
@@ -236,23 +228,15 @@ mod tests {
         config.check_text = false;
 
         assert_eq!(
-            detect_file_type(&config, Path::new("./testdata/text_present")),
+            detect_file_type(&config, Path::new("./testdata/lister/text_file.txt")),
             FileType::Unknown
         );
         assert_eq!(
-            detect_file_type(&config, Path::new("./testdata/text_empty_file")),
+            detect_file_type(&config, Path::new("./testdata/lister/png_file.png")),
             FileType::Unknown
         );
         assert_eq!(
-            detect_file_type(&config, Path::new("./testdata/png_empty.png")),
-            FileType::Unknown
-        );
-        assert_eq!(
-            detect_file_type(&config, Path::new("./testdata/pdf_empty.pdf")),
-            FileType::Pdf
-        );
-        assert_eq!(
-            detect_file_type(&config, Path::new("./testdata/pdf_present.pdf")),
+            detect_file_type(&config, Path::new("./testdata/lister/pdf_file.pdf")),
             FileType::Pdf
         );
     }
@@ -263,23 +247,15 @@ mod tests {
         config.check_pdf = false;
 
         assert_eq!(
-            detect_file_type(&config, Path::new("./testdata/text_present")),
+            detect_file_type(&config, Path::new("./testdata/lister/text_file.txt")),
             FileType::Text
         );
         assert_eq!(
-            detect_file_type(&config, Path::new("./testdata/text_empty_file")),
-            FileType::Text
-        );
-        assert_eq!(
-            detect_file_type(&config, Path::new("./testdata/png_empty.png")),
+            detect_file_type(&config, Path::new("./testdata/lister/png_file.png")),
             FileType::Unknown
         );
         assert_eq!(
-            detect_file_type(&config, Path::new("./testdata/pdf_empty.pdf")),
-            FileType::Unknown
-        );
-        assert_eq!(
-            detect_file_type(&config, Path::new("./testdata/pdf_present.pdf")),
+            detect_file_type(&config, Path::new("./testdata/lister/pdf_file.pdf")),
             FileType::Unknown
         );
     }
@@ -287,23 +263,23 @@ mod tests {
     #[test]
     fn test_get_files_list() {
         let mut config = Configuration::new();
-        config.search_dir = String::from("testdata");
+        config.search_dir = String::from("testdata/lister");
         config.quiet_mode = true;
 
         let res = get_files_list(&config);
 
-        assert_eq!(res.len(), 8);
+        assert_eq!(res.len(), 3);
     }
 
     #[test]
     fn test_get_files_list_filter() {
         let mut config = Configuration::new();
-        config.search_dir = String::from("testdata");
+        config.search_dir = String::from("testdata/lister");
         config.exclusions = vec![String::from("ignore")];
         config.quiet_mode = true;
 
         let res = get_files_list(&config);
 
-        assert_eq!(res.len(), 7);
+        assert_eq!(res.len(), 2);
     }
 }

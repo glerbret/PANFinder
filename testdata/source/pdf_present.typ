@@ -1,0 +1,12 @@
+Simple PDF with PAN 5017670000000000 and not a PAN 5017670000000001
+
+PANFinder found PAN
+
+With space: 5017670 000000018
+With minus sign: 50176700000000-26
+With line feed: 50176
+70000000034
+
+#pagebreak()
+
+Including on second page 5017670000000042

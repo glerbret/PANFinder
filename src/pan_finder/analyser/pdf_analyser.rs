@@ -116,9 +116,12 @@ mod tests {
 
         for entry in WalkDir::new("testdata/pdf_present.pdf") {
             let res = analyse_pdf_file(&entry.unwrap(), &patterns, &config).unwrap();
-            assert_eq!(res.len(), 2);
-            assert_eq!(res[0].pan, "501767000000 0000");
-            assert_eq!(res[1].pan, "4017670000000003");
+            assert_eq!(res.len(), 5);
+            assert_eq!(res[0].pan, "5017670000000000");
+            assert_eq!(res[1].pan, "5017670 000000018");
+            assert_eq!(res[2].pan, "50176700000000-26");
+            assert_eq!(res[3].pan, "50176 \n70000000034");
+            assert_eq!(res[4].pan, "5017670000000042");
         }
     }
 }
