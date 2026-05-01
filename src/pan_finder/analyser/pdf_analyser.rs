@@ -5,7 +5,7 @@ use crate::pan_finder::analyser::analyser_api::{FileAnalyseResult, PanFound};
 use crate::pan_finder::analyser::common::{Pattern, check_pattern};
 use crate::pan_finder::config::Configuration;
 
-/// Search for PAN in a text file
+/// Search for PAN in a PDF file
 pub fn analyse_pdf_file(
     file: &DirEntry,
     patterns_list: &Vec<Pattern>,
@@ -23,7 +23,7 @@ pub fn analyse_pdf_file(
     }
 }
 
-/// Search for PAN in a text file
+/// Search for PAN in a PDF file (provided as byte array)
 pub fn analyse_pdf_file_content(
     patterns_list: &Vec<Pattern>,
     config: &Configuration,

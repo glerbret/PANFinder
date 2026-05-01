@@ -1,4 +1,4 @@
-use std::cmp;
+use std::{cmp, fs, path::Path};
 
 /// Read the first n bytes of a file
 pub fn read_up_to(
@@ -45,5 +45,69 @@ pub fn is_pdf_file(data: &[u8], len: usize) -> bool {
         &header == b"%PDF"
     } else {
         false
+    }
+}
+
+/// Check if a file is empty
+pub fn is_file_empty(path: &Path) -> bool {
+    match fs::metadata(path).map(|metadata| metadata.len() == 0) {
+        Ok(res) => res,
+        Err(err) => {
+            println!(
+                "Emptiness of {} cannot be checked ({}), file ignored",
+                path.display(),
+                err
+            );
+            true
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_file_empty() {
+        assert!(!is_file_empty(Path::new("./testdata/lister/text_file.txt")));
+        assert!(is_file_empty(Path::new("./testdata/lister/empty_file")));
+        assert!(is_file_empty(Path::new("./testdata/lister/not_exist")));
+    }
+
+    #[test]
+    fn test_is_text_file() {
+        let mut data: [u8; 2000] = [0x30; 2000];
+        data[150] = 0;
+
+        assert!(is_text_file(&data, 100));
+        assert!(is_text_file(&data, 0));
+        assert!(!is_text_file(&data, 200));
+    }
+
+    #[test]
+    fn test_is_pdf_file() {
+        let mut data: [u8; 2000] = [0x30; 2000];
+        assert!(!is_pdf_file(&data, 100));
+
+        data[0] = b'%';
+        data[1] = b'P';
+        data[2] = b'D';
+        data[3] = b'F';
+        assert!(is_pdf_file(&data, 100));
+        assert!(!is_pdf_file(&data, 3));
+    }
+
+    #[test]
+    fn test_is_tar_file() {
+        let mut data: [u8; 2000] = [0x30; 2000];
+        assert!(!is_tar_file(&data, 500));
+
+        data[257] = b'u';
+        data[258] = b's';
+        data[259] = b't';
+        data[260] = b'a';
+        data[261] = b'r';
+        assert!(is_tar_file(&data, 500));
+        assert!(!is_tar_file(&data, 140));
     }
 }

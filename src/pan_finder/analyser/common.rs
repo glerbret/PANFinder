@@ -19,7 +19,11 @@ pub struct Pattern {
 }
 
 /// Search for a more specific brand
-pub fn search_sub_brand(number: &str, pattern: &Pattern, config: &Configuration,) -> Option<PanFound> {
+pub fn search_sub_brand(
+    number: &str,
+    pattern: &Pattern,
+    config: &Configuration,
+) -> Option<PanFound> {
     for sub_brand in &pattern.sub_brand {
         for bin in &sub_brand.bin_list {
             if number.starts_with(bin) {
@@ -79,15 +83,14 @@ pub fn check_match(
 
 /// Truncate card number in report (only last 4 digits are used)
 pub fn truncate_card_number(config: &Configuration, number: &str) -> String {
-if config.truncated_pan {
-    let mut truncated = "*******************".to_string();
-    truncated.truncate(number.len()-4);
-    truncated.push_str(&number[number.len()-4..]);
-    truncated
-}
-else {
-    number.to_string()
-}
+    if config.truncated_pan {
+        let mut truncated = "*******************".to_string();
+        truncated.truncate(number.len() - 4);
+        truncated.push_str(&number[number.len() - 4..]);
+        truncated
+    } else {
+        number.to_string()
+    }
 }
 
 /// Check one of PAN search pattern
@@ -488,7 +491,6 @@ mod tests {
         assert_eq!(res.len(), 1);
         assert_eq!(res[0].pan, "************0000");
     }
-
 
     #[test]
     fn test_check_pattern_present_not_mask() {

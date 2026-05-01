@@ -96,7 +96,7 @@ fn check_inc_file(
             if is_pdf_file(&data, size) {
                 check_pdf_file(patterns_list, config, filename.to_str().unwrap(), data)
             } else if is_text_file(&data, size) {
-                check_test_file(patterns_list, config, filename.to_str().unwrap(), &data)
+                check_text_file(patterns_list, config, filename.to_str().unwrap(), &data)
             } else {
                 Ok(Vec::new())
             }
@@ -109,7 +109,7 @@ fn check_inc_file(
     }
 }
 
-fn check_test_file(
+fn check_text_file(
     patterns_list: &Vec<Pattern>,
     config: &Configuration,
     filename: &str,

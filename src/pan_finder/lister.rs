@@ -1,12 +1,11 @@
 use indicatif::{ProgressBar, ProgressStyle};
-use std::fs;
 use std::fs::File;
 use std::path::Path;
 use walkdir::DirEntry;
 use walkdir::WalkDir;
 
 use crate::pan_finder::config::Configuration;
-use crate::pan_finder::utils::{is_pdf_file, is_tar_file, is_text_file, read_up_to};
+use crate::pan_finder::utils::{is_file_empty, is_pdf_file, is_tar_file, is_text_file, read_up_to};
 
 #[derive(PartialEq, Eq, Debug)]
 pub enum FileType {
@@ -124,21 +123,6 @@ fn detect_file_type(config: &Configuration, path: &Path) -> FileType {
         Err(error) => {
             println!("{error}");
             FileType::Unknown
-        }
-    }
-}
-
-/// Check if a file is empty
-fn is_file_empty(path: &Path) -> bool {
-    match fs::metadata(path).map(|metadata| metadata.len() == 0) {
-        Ok(res) => res,
-        Err(err) => {
-            println!(
-                "Emptiness of {} cannot be checked ({}), file ignored",
-                path.display(),
-                err
-            );
-            true
         }
     }
 }
