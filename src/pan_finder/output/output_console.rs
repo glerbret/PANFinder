@@ -63,6 +63,14 @@ fn output_pan(result: &AnalyseResult) {
                 for pan in &item.pan_found {
                     println!("    - {}: {}", pan.brand, pan.pan);
                 }
+            } else if !item.pan_found_per_subfiles.is_empty() {
+                println!("  * {}:", item.filename);
+                for entry in &item.pan_found_per_subfiles {
+                    println!("    * {}:", &entry.subfilename);
+                    for pan in &entry.pan_found {
+                        println!("      - {}: {}", pan.brand, pan.pan);
+                    }
+                }
             }
         }
     }

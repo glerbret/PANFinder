@@ -25,6 +25,10 @@ pub fn output_code_climate(
         if !item.pan_found.is_empty() {
             vector.append(&mut build_found_pan_record(item));
         }
+
+        if !item.pan_found_per_subfiles.is_empty() {
+            vector.append(&mut build_found_pan_record_subfile(item));
+        }
     }
 
     writeln!(file, "{}", json!(vector))?;
@@ -92,5 +96,35 @@ fn build_found_pan_record(item: &FileAnalyseResult) -> Vec<serde_json::Value> {
         });
         vector.push(issue);
     }
+    vector
+}
+
+fn build_found_pan_record_subfile(item: &FileAnalyseResult) -> Vec<serde_json::Value> {
+    let mut vector: Vec<serde_json::Value> = Vec::new();
+    for entry in &item.pan_found_per_subfiles {
+        for pan in &entry.pan_found {
+            let mut hasher = Hash::new();
+            hasher.update(&item.filename);
+            hasher.update(&pan.brand);
+            hasher.update(&pan.pan);
+            let hash = hasher.finalize();
+            let issue = json!({
+                "type": "issue",
+                "check_name": "Analyse/PAN found",
+                "description": format!("{}: {} in {}", pan.brand, pan.pan, entry.subfilename),
+                "categories": ["Security"],
+                "location": {
+                     "path": item.filename,
+              "lines": {
+                "begin": 1,
+                "end": 1,
+                }},
+                "severity": "critical",
+                "fingerprint": hex::encode(hash),
+            });
+            vector.push(issue);
+        }
+    }
+
     vector
 }

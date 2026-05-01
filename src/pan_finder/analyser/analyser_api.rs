@@ -17,10 +17,18 @@ pub struct PanFound {
 }
 
 #[derive(Debug)]
+pub struct SubFileAnalyseResult {
+    pub subfilename: String,
+    pub pan_found: Vec<PanFound>,
+}
+
+#[derive(Debug)]
 pub struct FileAnalyseResult {
     pub filename: String,
     pub error_msg: String,
     pub pan_found: Vec<PanFound>,
+    // If file contains subfile
+    pub pan_found_per_subfiles: Vec<SubFileAnalyseResult>,
 }
 
 #[derive(Debug)]
@@ -59,19 +67,21 @@ pub fn analyse_files(files_list: Vec<FilesDescription>, config: &Configuration) 
             FileType::Text => analyse_text_file(&f.file_entry, &patterns_list, config),
             FileType::Pdf => analyse_pdf_file(&f.file_entry, &patterns_list, config),
             FileType::Tar => analyse_tar_file(&f.file_entry, &patterns_list, config),
-            FileType::Unknown => Ok(Vec::new()),
+            FileType::Unknown => Ok(FileAnalyseResult {
+                filename: String::new(),
+                error_msg: String::new(),
+                pan_found: Vec::new(),
+                pan_found_per_subfiles: Vec::new(),
+            }),
         };
 
         match result {
-            Ok(pan_found) => {
-                if !pan_found.is_empty() {
-                    analyse_result.nb_found_pan += pan_found.len() as u64;
-                    analyse_result.results_list.push(FileAnalyseResult {
-                        filename,
-                        error_msg: String::new(),
-                        pan_found,
-                    });
+            Ok(res) => {
+                analyse_result.nb_found_pan += res.pan_found.len() as u64;
+                for entry in &res.pan_found_per_subfiles {
+                    analyse_result.nb_found_pan += entry.pan_found.len() as u64;
                 }
+                analyse_result.results_list.push(res);
             }
             Err(error_msg) => {
                 analyse_result.nb_error += 1;
@@ -79,6 +89,7 @@ pub fn analyse_files(files_list: Vec<FilesDescription>, config: &Configuration) 
                     filename,
                     error_msg,
                     pan_found: Vec::new(),
+                    pan_found_per_subfiles: Vec::new(),
                 });
             }
         }

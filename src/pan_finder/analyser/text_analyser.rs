@@ -1,7 +1,7 @@
 use std::fs;
 use walkdir::DirEntry;
 
-use crate::pan_finder::analyser::analyser_api::PanFound;
+use crate::pan_finder::analyser::analyser_api::{FileAnalyseResult, PanFound};
 use crate::pan_finder::analyser::common::{Pattern, check_pattern};
 use crate::pan_finder::config::Configuration;
 
@@ -10,14 +10,19 @@ pub fn analyse_text_file(
     file: &DirEntry,
     patterns_list: &Vec<Pattern>,
     config: &Configuration,
-) -> Result<Vec<PanFound>, String> {
+) -> Result<FileAnalyseResult, String> {
     match fs::read_to_string(file.path()) {
-        Ok(content) => Ok(analyse_text_file_content(
-            patterns_list,
-            config,
-            file.path().to_str().unwrap(),
-            &content,
-        )),
+        Ok(content) => Ok(FileAnalyseResult {
+            filename: file.path().to_str().unwrap().to_string(),
+            error_msg: String::new(),
+            pan_found: analyse_text_file_content(
+                patterns_list,
+                config,
+                file.path().to_str().unwrap(),
+                &content,
+            ),
+            pan_found_per_subfiles: Vec::new(),
+        }),
         Err(e) => Err(format!(
             "read error {} {}",
             file.path().to_str().unwrap(),
@@ -73,7 +78,7 @@ mod tests {
 
         for entry in WalkDir::new("testdata/text_not_present.txt") {
             let res = analyse_text_file(&entry.unwrap(), &patterns, &config).unwrap();
-            assert!(res.is_empty());
+            assert!(res.pan_found.is_empty());
         }
     }
 
@@ -99,14 +104,14 @@ mod tests {
 
         for entry in WalkDir::new("testdata/text_present.txt") {
             let res = analyse_text_file(&entry.unwrap(), &patterns, &config).unwrap();
-            assert_eq!(res.len(), 4);
-            assert_eq!(res[0].pan, "5017670000000000");
-            assert_eq!(res[1].pan, "5017670 000000018");
-            assert_eq!(res[2].pan, "50176700000000-26");
+            assert_eq!(res.pan_found.len(), 4);
+            assert_eq!(res.pan_found[0].pan, "5017670000000000");
+            assert_eq!(res.pan_found[1].pan, "5017670 000000018");
+            assert_eq!(res.pan_found[2].pan, "50176700000000-26");
             if cfg!(unix) {
-                assert_eq!(res[3].pan, "50176\n70000000034");
+                assert_eq!(res.pan_found[3].pan, "50176\n70000000034");
             } else if cfg!(windows) {
-                assert_eq!(res[3].pan, "50176\r\n70000000034");
+                assert_eq!(res.pan_found[3].pan, "50176\r\n70000000034");
             }
         }
     }

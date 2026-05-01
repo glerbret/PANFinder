@@ -2,7 +2,9 @@ use std::fs::File;
 use tar::{Archive, Entry};
 use walkdir::DirEntry;
 
-use crate::pan_finder::analyser::analyser_api::PanFound;
+use crate::pan_finder::analyser::analyser_api::{
+    FileAnalyseResult, PanFound, SubFileAnalyseResult,
+};
 use crate::pan_finder::analyser::common::Pattern;
 use crate::pan_finder::analyser::pdf_analyser::analyse_pdf_file_content;
 use crate::pan_finder::analyser::text_analyser::analyse_text_file_content;
@@ -13,8 +15,13 @@ pub fn analyse_tar_file(
     file: &DirEntry,
     patterns_list: &Vec<Pattern>,
     config: &Configuration,
-) -> Result<Vec<PanFound>, String> {
-    let mut results: Vec<PanFound> = Vec::new();
+) -> Result<FileAnalyseResult, String> {
+    let mut results = FileAnalyseResult {
+        filename: file.path().to_str().unwrap().to_string(),
+        error_msg: String::new(),
+        pan_found: Vec::new(),
+        pan_found_per_subfiles: Vec::new(),
+    };
 
     match File::open(file.path()) {
         Ok(tar_file) => {
@@ -42,7 +49,26 @@ pub fn analyse_tar_file(
                         ));
                     }
                 };
-                results.append(&mut check_inc_file(patterns_list, config, &mut inc_file)?);
+
+                match check_inc_file(patterns_list, config, &mut inc_file) {
+                    Ok(pan_found) => {
+                        if !pan_found.is_empty() {
+                            results.pan_found_per_subfiles.push(SubFileAnalyseResult {
+                                subfilename: inc_file
+                                    .header()
+                                    .path()
+                                    .unwrap()
+                                    .to_str()
+                                    .unwrap()
+                                    .to_string(),
+                                pan_found,
+                            });
+                        }
+                    }
+                    Err(e) => return Err(e),
+                }
+
+                //results.append(&mut check_inc_file(patterns_list, config, &mut inc_file)?);
             }
 
             Ok(results)

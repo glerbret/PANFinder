@@ -90,6 +90,14 @@ pub fn output_pan(result: &AnalyseResult, file: &mut File) -> Result<(), Error> 
                 for pan in &item.pan_found {
                     writeln!(file, "    - {}: {}", pan.brand, pan.pan)?;
                 }
+            } else if !item.pan_found_per_subfiles.is_empty() {
+                writeln!(file, "  * {}:", item.filename)?;
+                for entry in &item.pan_found_per_subfiles {
+                    writeln!(file, "    * {}:", &entry.subfilename)?;
+                    for pan in &entry.pan_found {
+                        writeln!(file, "      - {}: {}", pan.brand, pan.pan)?;
+                    }
+                }
             }
         }
     }

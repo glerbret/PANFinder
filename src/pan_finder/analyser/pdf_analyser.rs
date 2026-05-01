@@ -1,7 +1,7 @@
 use pdf_oxide::PdfDocument;
 use walkdir::DirEntry;
 
-use crate::pan_finder::analyser::analyser_api::PanFound;
+use crate::pan_finder::analyser::analyser_api::{FileAnalyseResult, PanFound};
 use crate::pan_finder::analyser::common::{Pattern, check_pattern};
 use crate::pan_finder::config::Configuration;
 
@@ -10,9 +10,17 @@ pub fn analyse_pdf_file(
     file: &DirEntry,
     patterns_list: &Vec<Pattern>,
     config: &Configuration,
-) -> Result<Vec<PanFound>, String> {
+) -> Result<FileAnalyseResult, String> {
     let doc = get_pdf_doc_from_file(file)?;
-    analyse_content(patterns_list, config, file.path().to_str().unwrap(), &doc)
+    match analyse_content(patterns_list, config, file.path().to_str().unwrap(), &doc) {
+        Ok(pan) => Ok(FileAnalyseResult {
+            filename: file.path().to_str().unwrap().to_string(),
+            error_msg: String::new(),
+            pan_found: pan,
+            pan_found_per_subfiles: Vec::new(),
+        }),
+        Err(e) => Err(e),
+    }
 }
 
 /// Search for PAN in a text file
@@ -107,7 +115,7 @@ mod tests {
 
         for entry in WalkDir::new("testdata/pdf_not_present.pdf") {
             let res = analyse_pdf_file(&entry.unwrap(), &patterns, &config).unwrap();
-            assert!(res.is_empty());
+            assert!(res.pan_found.is_empty());
         }
     }
 
@@ -133,12 +141,12 @@ mod tests {
 
         for entry in WalkDir::new("testdata/pdf_present.pdf") {
             let res = analyse_pdf_file(&entry.unwrap(), &patterns, &config).unwrap();
-            assert_eq!(res.len(), 5);
-            assert_eq!(res[0].pan, "5017670000000000");
-            assert_eq!(res[1].pan, "5017670 000000018");
-            assert_eq!(res[2].pan, "50176700000000-26");
-            assert_eq!(res[3].pan, "50176 \n70000000034");
-            assert_eq!(res[4].pan, "5017670000000042");
+            assert_eq!(res.pan_found.len(), 5);
+            assert_eq!(res.pan_found[0].pan, "5017670000000000");
+            assert_eq!(res.pan_found[1].pan, "5017670 000000018");
+            assert_eq!(res.pan_found[2].pan, "50176700000000-26");
+            assert_eq!(res.pan_found[3].pan, "50176 \n70000000034");
+            assert_eq!(res.pan_found[4].pan, "5017670000000042");
         }
     }
 }
