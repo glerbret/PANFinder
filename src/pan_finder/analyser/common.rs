@@ -47,11 +47,6 @@ pub fn check_match(
         .filter(|c| !c.is_whitespace() && *c != '-')
         .collect();
 
-    let display_number: String = found_number
-        .chars()
-        .map(|c| if c == '\r' || c == '\n' { ' ' } else { c })
-        .collect();
-
     if luhn::valid(&number)
         && !is_excluded(
             &number,
@@ -62,7 +57,7 @@ pub fn check_match(
     {
         match search_sub_brand(&number, pattern) {
             Some(mut res) => {
-                res.pan = display_number;
+                res.pan = number;
 
                 // Remove PAN of test card
                 if !config.report_test_bin && res.test_bin {
@@ -73,7 +68,7 @@ pub fn check_match(
             }
             None => {
                 return Some(PanFound {
-                    pan: display_number,
+                    pan: number,
                     brand: pattern.brand.clone(),
                     test_bin: false,
                 });
@@ -216,7 +211,7 @@ mod tests {
         {
             let mut config = Configuration::new();
             config.excluded_pan = vec![String::from("5017670000000000")];
-            assert!(check_match("501767000-0000000", &pattern, &config, "").is_none());
+            assert!(check_match("5017670000000000", &pattern, &config, "").is_none());
         }
 
         {
@@ -266,7 +261,7 @@ mod tests {
                 .insert(String::from("file"), vec![String::from("5017670000000000")]);
             let mut config = Configuration::new();
             config.excluded_pan_per_file = excluded_pan_per_file;
-            assert!(check_match("501767000-0000000", &pattern, &config, "file").is_none());
+            assert!(check_match("5017670000000000", &pattern, &config, "file").is_none());
         }
 
         {
@@ -319,7 +314,7 @@ mod tests {
         assert!(check_match("50671700 00000000", &pattern, &config, "").is_some());
         let res = check_match("50671700 00000000", &pattern, &config, "").unwrap();
         assert_eq!(res.brand, "Credit card");
-        assert_eq!(res.pan, "50671700 00000000");
+        assert_eq!(res.pan, "5067170000000000");
     }
 
     #[test]
@@ -345,7 +340,7 @@ mod tests {
         assert!(check_match("50176700 00000000", &pattern, &config, "").is_some());
         let res = check_match("50176700 00000000", &pattern, &config, "").unwrap();
         assert_eq!(res.brand, "BIN 1");
-        assert_eq!(res.pan, "50176700 00000000");
+        assert_eq!(res.pan, "5017670000000000");
     }
 
     #[test]
@@ -395,7 +390,7 @@ mod tests {
         assert!(check_match("50176700 00000000", &pattern, &config, "").is_some());
         let res = check_match("50176700 00000000", &pattern, &config, "").unwrap();
         assert_eq!(res.brand, "BIN 1");
-        assert_eq!(res.pan, "50176700 00000000");
+        assert_eq!(res.pan, "5017670000000000");
         assert!(res.test_bin);
     }
 
@@ -480,6 +475,6 @@ mod tests {
                 ccc";
         let res = check_pattern(content, &pattern, &config, "");
         assert_eq!(res.len(), 1);
-        assert_eq!(res[0].pan, "501767000-0000000");
+        assert_eq!(res[0].pan, "5017670000000000");
     }
 }

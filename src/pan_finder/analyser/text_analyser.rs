@@ -106,13 +106,9 @@ mod tests {
             let res = analyse_text_file(&entry.unwrap(), &patterns, &config).unwrap();
             assert_eq!(res.pan_found.len(), 4);
             assert_eq!(res.pan_found[0].pan, "5017670000000000");
-            assert_eq!(res.pan_found[1].pan, "5017670 000000018");
-            assert_eq!(res.pan_found[2].pan, "50176700000000-26");
-            if cfg!(unix) {
-                assert_eq!(res.pan_found[3].pan, "50176 70000000034");
-            } else if cfg!(windows) {
-                assert_eq!(res.pan_found[3].pan, "50176  70000000034");
-            }
+            assert_eq!(res.pan_found[1].pan, "5017670000000018");
+            assert_eq!(res.pan_found[2].pan, "5017670000000026");
+            assert_eq!(res.pan_found[3].pan, "5017670000000034");
         }
     }
 }

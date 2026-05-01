@@ -96,12 +96,11 @@ _Note:_ `filename` must be enclosed by `"` and use `/` as path separator
 
 * Code Climate report always use `1` as line number
 * Analyse of TAR archive only check for included PDF and text files
-* To improve readability, `\r` and `\n` present in PAN are replaced by space in report
+* Number are reported without space, `\r`, `\n` or `-` characters
 
 ## Future evolution
 
 * [ ] Support more file format (archives and compressed files, ...)
-* [ ] Excel output
 
 ## License
 
