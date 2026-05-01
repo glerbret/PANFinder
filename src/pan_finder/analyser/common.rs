@@ -47,6 +47,11 @@ pub fn check_match(
         .filter(|c| !c.is_whitespace() && *c != '-')
         .collect();
 
+    let display_number: String = found_number
+            .chars()
+            .map(|c| if c == '\r' || c == '\n' { ' ' } else { c })
+            .collect();
+
     if luhn::valid(&number)
         && !is_excluded(
             &number,
@@ -57,7 +62,7 @@ pub fn check_match(
     {
         match search_sub_brand(&number, pattern) {
             Some(mut res) => {
-                res.pan = found_number.to_string();
+                res.pan = display_number;
 
                 // Remove PAN of test card
                 if !config.report_test_bin && res.test_bin {
@@ -68,7 +73,7 @@ pub fn check_match(
             }
             None => {
                 return Some(PanFound {
-                    pan: found_number.to_string(),
+                    pan: display_number,
                     brand: pattern.brand.clone(),
                     test_bin: false,
                 });
