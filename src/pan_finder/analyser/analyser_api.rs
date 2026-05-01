@@ -4,6 +4,7 @@ use std::vec;
 
 use crate::pan_finder::analyser::common::{Pattern, SubBrand};
 use crate::pan_finder::analyser::pdf_analyser::analyse_pdf_file;
+use crate::pan_finder::analyser::tar_analyser::analyse_tar_file;
 use crate::pan_finder::analyser::text_analyser::analyse_text_file;
 use crate::pan_finder::config::Configuration;
 use crate::pan_finder::lister::{FileType, FilesDescription};
@@ -57,6 +58,7 @@ pub fn analyse_files(files_list: Vec<FilesDescription>, config: &Configuration) 
         let result = match f.file_type {
             FileType::Text => analyse_text_file(&f.file_entry, &patterns_list, config),
             FileType::Pdf => analyse_pdf_file(&f.file_entry, &patterns_list, config),
+            FileType::Tar => analyse_tar_file(&f.file_entry, &patterns_list, config),
             FileType::Unknown => Ok(Vec::new()),
         };
 

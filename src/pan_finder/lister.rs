@@ -6,6 +6,7 @@ use walkdir::DirEntry;
 use walkdir::WalkDir;
 
 use crate::pan_finder::config::Configuration;
+use crate::pan_finder::utils::{is_pdf_file, is_tar_file, is_text_file, read_up_to};
 
 #[derive(PartialEq, Eq, Debug)]
 pub enum FileType {
@@ -13,6 +14,7 @@ pub enum FileType {
 
     Text,
     Pdf,
+    Tar,
 }
 
 /// Configuration of application
@@ -77,24 +79,6 @@ fn is_excluded(entry: &DirEntry, exclusions: &Vec<String>) -> bool {
     })
 }
 
-/// Read the first n bytes of a file
-fn read_up_to(file: &mut impl std::io::Read, mut buf: &mut [u8]) -> Result<usize, std::io::Error> {
-    let buf_len = buf.len();
-
-    while !buf.is_empty() {
-        match file.read(buf) {
-            Ok(0) => break,
-            Ok(n) => {
-                let tmp = buf;
-                buf = &mut tmp[n..];
-            }
-            Err(ref e) if e.kind() == std::io::ErrorKind::Interrupted => {}
-            Err(e) => return Err(e),
-        }
-    }
-    Ok(buf_len - buf.len())
-}
-
 /// Read file content
 fn read_file_content(path: &Path, data: &mut [u8; 2000]) -> Result<usize, String> {
     match File::open(path) {
@@ -114,23 +98,6 @@ fn read_file_content(path: &Path, data: &mut [u8; 2000]) -> Result<usize, String
     }
 }
 
-/// Check is a file is a text one
-///
-/// _Note:_ a file is considered be a text one if there is no `0` in its first 8000 bytes
-fn is_text_file(data: &[u8; 2000], len: usize) -> bool {
-    !data[0..len].contains(&0u8)
-}
-
-/// Check is a file is a text one
-fn is_pdf_file(data: &[u8; 2000], len: usize) -> bool {
-    if len >= 4 {
-        let header: [u8; 4] = data[0..4].try_into().unwrap();
-        &header == b"%PDF"
-    } else {
-        false
-    }
-}
-
 /// Detect type of file
 fn detect_file_type(config: &Configuration, path: &Path) -> FileType {
     let mut data: [u8; 2000] = [0; 2000];
@@ -139,6 +106,13 @@ fn detect_file_type(config: &Configuration, path: &Path) -> FileType {
             if is_pdf_file(&data, len) {
                 if config.check_pdf {
                     FileType::Pdf
+                } else {
+                    FileType::Unknown
+                }
+            } else if is_tar_file(&data, len) {
+                if config.check_tar {
+                    println!("{} is tar file", path.display());
+                    FileType::Tar
                 } else {
                     FileType::Unknown
                 }
@@ -205,6 +179,20 @@ mod tests {
     }
 
     #[test]
+    fn test_is_tar_file() {
+        let mut data: [u8; 2000] = [0x30; 2000];
+        assert!(!is_tar_file(&data, 500));
+
+        data[257] = b'u';
+        data[258] = b's';
+        data[259] = b't';
+        data[260] = b'a';
+        data[261] = b'r';
+        assert!(is_tar_file(&data, 500));
+        assert!(!is_tar_file(&data, 140));
+    }
+
+    #[test]
     fn test_detect_file_type_all() {
         let config = Configuration::new();
 
@@ -219,6 +207,10 @@ mod tests {
         assert_eq!(
             detect_file_type(&config, Path::new("./testdata/lister/pdf_file.pdf")),
             FileType::Pdf
+        );
+        assert_eq!(
+            detect_file_type(&config, Path::new("./testdata/lister/tar_file.tar")),
+            FileType::Tar
         );
     }
 
@@ -239,6 +231,10 @@ mod tests {
             detect_file_type(&config, Path::new("./testdata/lister/pdf_file.pdf")),
             FileType::Pdf
         );
+        assert_eq!(
+            detect_file_type(&config, Path::new("./testdata/lister/tar_file.tar")),
+            FileType::Tar
+        );
     }
 
     #[test]
@@ -258,6 +254,33 @@ mod tests {
             detect_file_type(&config, Path::new("./testdata/lister/pdf_file.pdf")),
             FileType::Unknown
         );
+        assert_eq!(
+            detect_file_type(&config, Path::new("./testdata/lister/tar_file.tar")),
+            FileType::Tar
+        );
+    }
+
+    #[test]
+    fn test_detect_file_type_no_tar() {
+        let mut config = Configuration::new();
+        config.check_tar = false;
+
+        assert_eq!(
+            detect_file_type(&config, Path::new("./testdata/lister/text_file.txt")),
+            FileType::Text
+        );
+        assert_eq!(
+            detect_file_type(&config, Path::new("./testdata/lister/png_file.png")),
+            FileType::Unknown
+        );
+        assert_eq!(
+            detect_file_type(&config, Path::new("./testdata/lister/pdf_file.pdf")),
+            FileType::Pdf
+        );
+        assert_eq!(
+            detect_file_type(&config, Path::new("./testdata/lister/tar_file.tar")),
+            FileType::Unknown
+        );
     }
 
     #[test]
@@ -268,7 +291,7 @@ mod tests {
 
         let res = get_files_list(&config);
 
-        assert_eq!(res.len(), 3);
+        assert_eq!(res.len(), 4);
     }
 
     #[test]
@@ -280,6 +303,6 @@ mod tests {
 
         let res = get_files_list(&config);
 
-        assert_eq!(res.len(), 2);
+        assert_eq!(res.len(), 3);
     }
 }

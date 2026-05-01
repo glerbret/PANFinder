@@ -12,16 +12,12 @@ pub fn analyse_text_file(
     config: &Configuration,
 ) -> Result<Vec<PanFound>, String> {
     match fs::read_to_string(file.path()) {
-        Ok(content) => {
-            let mut results: Vec<PanFound> = Vec::new();
-
-            for pattern in patterns_list {
-                let mut res =
-                    check_pattern(&content, pattern, config, file.path().to_str().unwrap());
-                results.append(&mut res);
-            }
-            Ok(results)
-        }
+        Ok(content) => Ok(analyse_text_file_content(
+            patterns_list,
+            config,
+            file.path().to_str().unwrap(),
+            &content,
+        )),
         Err(e) => Err(format!(
             "read error {} {}",
             file.path().to_str().unwrap(),
@@ -29,6 +25,24 @@ pub fn analyse_text_file(
         )),
     }
 }
+
+/// Analyse text file content
+pub fn analyse_text_file_content(
+    patterns_list: &Vec<Pattern>,
+    config: &Configuration,
+    filename: &str,
+    content: &str,
+) -> Vec<PanFound> {
+    let mut results: Vec<PanFound> = Vec::new();
+
+    for pattern in patterns_list {
+        let mut res = check_pattern(content, pattern, config, filename);
+        results.append(&mut res);
+    }
+
+    results
+}
+
 #[cfg(test)]
 mod tests {
     use crate::pan_finder::analyser::common::SubBrand;

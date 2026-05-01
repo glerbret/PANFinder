@@ -42,6 +42,8 @@ Options:
           Disable analyse of text file
       --disable-pdf-check
           Disable analyse of PDF file
+      --disable-tar-check
+          Disable analyse of TAR archive
   -q, --quiet-mode
           Quiet mode
   -c, --conf-file <CONF_FILE>
@@ -61,6 +63,7 @@ The supported format, with format detection criteria, are listed hereafter
 
 * Text files: files without any `0` in the first 2000 bytes and not yet identified as other file type
 * PDF files: files with `%PDF` as first 4 digits
+* TAR archives: files with `ustar` as `[257; 262[` bytes
 
 ## Configuration file
 
@@ -72,6 +75,7 @@ Parameters live in a `parameters` section:
 * `report_test`: report found PAN identified as test card
 * `check_text`: enable analyse of text file
 * `check_pdf`: enable analyse of PDF file
+* `check_tar`: enable analyse of TAR archive
 * `output_console`: enable report on console
 * `output_text`: enable report in text file
 * `text_filename`: name of output file text
@@ -91,6 +95,7 @@ _Note:_ `filename` must be enclosed by `"` and use `/` as path separator
 ## Known limitations
 
 * Code Climate report always use `1` as line number
+* Analyse of TAR archive only check for included PDF and text files
 
 ## Future evolution
 

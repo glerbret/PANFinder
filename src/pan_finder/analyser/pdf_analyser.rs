@@ -11,35 +11,22 @@ pub fn analyse_pdf_file(
     patterns_list: &Vec<Pattern>,
     config: &Configuration,
 ) -> Result<Vec<PanFound>, String> {
-    let mut results: Vec<PanFound> = Vec::new();
-
-    let doc = get_pdf_doc(file)?;
-    let nb_pages = get_pdf_number_pages(file, &doc)?;
-
-    for i in 0..nb_pages {
-        match doc.extract_text(i) {
-            Ok(content) => {
-                for pattern in patterns_list {
-                    let mut res =
-                        check_pattern(&content, pattern, config, file.path().to_str().unwrap());
-                    results.append(&mut res);
-                }
-            }
-            Err(err) => {
-                return Err(format!(
-                    "Can not read page {} from {}: {}",
-                    i,
-                    file.path().to_str().unwrap(),
-                    err
-                ));
-            }
-        }
-    }
-
-    Ok(results)
+    let doc = get_pdf_doc_from_file(file)?;
+    analyse_content(patterns_list, config, file.path().to_str().unwrap(), &doc)
 }
 
-fn get_pdf_doc(file: &DirEntry) -> Result<PdfDocument, String> {
+/// Search for PAN in a text file
+pub fn analyse_pdf_file_content(
+    patterns_list: &Vec<Pattern>,
+    config: &Configuration,
+    filename: &str,
+    content: Vec<u8>,
+) -> Result<Vec<PanFound>, String> {
+    let doc = get_pdf_doc_from_bytes(filename, content)?;
+    analyse_content(patterns_list, config, filename, &doc)
+}
+
+fn get_pdf_doc_from_file(file: &DirEntry) -> Result<PdfDocument, String> {
     match PdfDocument::open(file.path()) {
         Ok(doc) => Ok(doc),
         Err(err) => Err(format!(
@@ -50,14 +37,43 @@ fn get_pdf_doc(file: &DirEntry) -> Result<PdfDocument, String> {
     }
 }
 
-fn get_pdf_number_pages(file: &DirEntry, doc: &PdfDocument) -> Result<usize, String> {
+fn get_pdf_doc_from_bytes(filename: &str, data: Vec<u8>) -> Result<PdfDocument, String> {
+    match PdfDocument::from_bytes(data) {
+        Ok(doc) => Ok(doc),
+        Err(err) => Err(format!("Can not open PDF file {filename}: {err}")),
+    }
+}
+
+fn analyse_content(
+    patterns_list: &Vec<Pattern>,
+    config: &Configuration,
+    filename: &str,
+    doc: &PdfDocument,
+) -> Result<Vec<PanFound>, String> {
+    let mut results: Vec<PanFound> = Vec::new();
+    let nb_pages = get_pdf_number_pages(filename, doc)?;
+
+    for i in 0..nb_pages {
+        match doc.extract_text(i) {
+            Ok(content) => {
+                for pattern in patterns_list {
+                    let mut res = check_pattern(&content, pattern, config, filename);
+                    results.append(&mut res);
+                }
+            }
+            Err(err) => {
+                return Err(format!("Can not read page {i} from {filename}: {err}"));
+            }
+        }
+    }
+
+    Ok(results)
+}
+
+fn get_pdf_number_pages(filename: &str, doc: &PdfDocument) -> Result<usize, String> {
     match doc.page_count() {
         Ok(nb_pages) => Ok(nb_pages),
-        Err(err) => Err(format!(
-            "Can not get number of page from {}: {}",
-            file.path().to_str().unwrap(),
-            err
-        )),
+        Err(err) => Err(format!("Can not get number of page from {filename}: {err}")),
     }
 }
 

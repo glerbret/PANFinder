@@ -12,6 +12,7 @@ pub struct Configuration {
     pub report_test_bin: bool,
     pub check_text: bool,
     pub check_pdf: bool,
+    pub check_tar: bool,
     pub quiet_mode: bool,
     pub output_console: bool,
     pub output_text: bool,
@@ -31,6 +32,7 @@ impl Configuration {
             report_test_bin: false,
             check_text: true,
             check_pdf: true,
+            check_tar: true,
             quiet_mode: false,
             output_console: true,
             output_text: false,
@@ -81,6 +83,9 @@ fn read_configuration_file(config: &mut Configuration, conf_file: &String) {
             }
             if parameters.contains_key("check_pdf") {
                 config.check_pdf = parameters["check_pdf"].as_bool().unwrap();
+            }
+            if parameters.contains_key("check_tar") {
+                config.check_tar = parameters["check_tar"].as_bool().unwrap();
             }
             if parameters.contains_key("output_console") {
                 config.output_console = parameters["output_console"].as_bool().unwrap();
@@ -187,6 +192,9 @@ fn overload_conf_cli(config: &mut Configuration, args: &Args) {
     if args.disable_pdf_check {
         config.check_pdf = false;
     }
+    if args.disable_tar_check {
+        config.check_tar = false;
+    }
 }
 
 /// Configuration from command line
@@ -242,6 +250,10 @@ struct Args {
     /// Disable analyse of PDF file
     #[arg(long, default_value_t = false)]
     disable_pdf_check: bool,
+
+    /// Disable analyse of TAR archive
+    #[arg(long, default_value_t = false)]
+    disable_tar_check: bool,
 
     /// Quiet mode
     #[arg(short, long, default_value_t = false)]
