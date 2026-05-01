@@ -71,18 +71,18 @@ Program can be parameterized with a TOML configuration file (`./PANFinder.toml` 
 
 Parameters live in a `parameters` section:
 
-* `search_dir`: name of directory to analyse
-* `report_test`: report found PAN identified as test card
-* `check_text`: enable analyse of text file
-* `check_pdf`: enable analyse of PDF file
-* `check_tar`: enable analyse of TAR archive
-* `output_console`: enable report on console
-* `output_text`: enable report in text file
-* `text_filename`: name of output file text
-* `output_excel`: enable report in XLSX file
-* `excel_filename`: name of output XLSX file
-* `output_code_climate`: enable report in Code Climate file
-* `code_climate_filename`: name of output Code Climate file
+* `search_dir`: name of directory to analyse (default: `.`)
+* `report_test`: report found PAN identified as test card (default : false)
+* `check_text`: enable analyse of text file (default : true)
+* `check_pdf`: enable analyse of PDF file (default : true)
+* `check_tar`: enable analyse of TAR archive (default : true)
+* `output_console`: enable report on console (default : true)
+* `output_text`: enable report in text file (default : false)
+* `text_filename`: name of output file text (default: `PANFinder_<datetime>.txt`)
+* `output_excel`: enable report in XLSX file (default : false)
+* `excel_filename`: name of output XLSX file (default: `PANFinder_<datetime>.xlsx`)
+* `output_code_climate`: enable report in Code Climate file (default : false)
+* `code_climate_filename`: name of output Code Climate file (default: `PANFinder_<datetime>.txt`)
 
 Exclusion live in a `exclusions` section:
 
