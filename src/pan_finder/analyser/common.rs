@@ -48,9 +48,9 @@ pub fn check_match(
         .collect();
 
     let display_number: String = found_number
-            .chars()
-            .map(|c| if c == '\r' || c == '\n' { ' ' } else { c })
-            .collect();
+        .chars()
+        .map(|c| if c == '\r' || c == '\n' { ' ' } else { c })
+        .collect();
 
     if luhn::valid(&number)
         && !is_excluded(

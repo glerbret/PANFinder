@@ -134,3 +134,110 @@ fn check_pdf_file(
 ) -> Result<Vec<PanFound>, String> {
     analyse_pdf_file_content(patterns_list, config, filename, data)
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::pan_finder::analyser::common::SubBrand;
+
+    use super::*;
+    use regex::Regex;
+    use walkdir::WalkDir;
+
+    #[test]
+    fn test_analyse_tar_file_not_present() {
+        let patterns = vec![Pattern {
+            brand: String::from("Credit card"),
+            re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
+            sub_brand: vec![
+                SubBrand {
+                    brand: String::from("BIN 1"),
+                    test_bin: false,
+                    bin_list: vec![String::from("501767")],
+                },
+                SubBrand {
+                    brand: String::from("BIN 2"),
+                    test_bin: false,
+                    bin_list: vec![String::from("507100")],
+                },
+            ],
+        }];
+        let config = Configuration::new();
+
+        for entry in WalkDir::new("testdata/tar_not_present.tar") {
+            let res = analyse_tar_file(&entry.unwrap(), &patterns, &config).unwrap();
+            assert!(res.pan_found.is_empty());
+        }
+    }
+
+    #[test]
+    fn test_analyse_tar_file_present() {
+        let patterns = vec![Pattern {
+            brand: String::from("Credit card"),
+            re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
+            sub_brand: vec![
+                SubBrand {
+                    brand: String::from("BIN 1"),
+                    test_bin: false,
+                    bin_list: vec![String::from("501767")],
+                },
+                SubBrand {
+                    brand: String::from("BIN 2"),
+                    test_bin: false,
+                    bin_list: vec![String::from("507100")],
+                },
+            ],
+        }];
+        let config = Configuration::new();
+
+        for entry in WalkDir::new("testdata/tar_present.tar") {
+            let res = analyse_tar_file(&entry.unwrap(), &patterns, &config).unwrap();
+            assert_eq!(res.pan_found.len(), 0);
+            assert_eq!(res.pan_found_per_subfiles.len(), 2);
+
+            assert_eq!(res.pan_found_per_subfiles[0].subfilename, "pdf_present.pdf");
+            assert_eq!(res.pan_found_per_subfiles[0].pan_found.len(), 5);
+            assert_eq!(
+                res.pan_found_per_subfiles[0].pan_found[0].pan,
+                "5017670000000000"
+            );
+            assert_eq!(
+                res.pan_found_per_subfiles[0].pan_found[1].pan,
+                "5017670 000000018"
+            );
+            assert_eq!(
+                res.pan_found_per_subfiles[0].pan_found[2].pan,
+                "50176700000000-26"
+            );
+            assert_eq!(
+                res.pan_found_per_subfiles[0].pan_found[3].pan,
+                "50176  70000000034"
+            );
+            assert_eq!(
+                res.pan_found_per_subfiles[0].pan_found[4].pan,
+                "5017670000000042"
+            );
+
+            assert_eq!(
+                res.pan_found_per_subfiles[1].subfilename,
+                "text_present.txt"
+            );
+            assert_eq!(res.pan_found_per_subfiles[1].pan_found.len(), 4);
+            assert_eq!(
+                res.pan_found_per_subfiles[1].pan_found[0].pan,
+                "5017670000000000"
+            );
+            assert_eq!(
+                res.pan_found_per_subfiles[1].pan_found[1].pan,
+                "5017670 000000018"
+            );
+            assert_eq!(
+                res.pan_found_per_subfiles[1].pan_found[2].pan,
+                "50176700000000-26"
+            );
+            assert_eq!(
+                res.pan_found_per_subfiles[1].pan_found[3].pan,
+                "50176  70000000034"
+            );
+        }
+    }
+}
