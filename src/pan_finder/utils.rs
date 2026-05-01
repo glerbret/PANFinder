@@ -1,3 +1,5 @@
+use std::cmp;
+
 /// Read the first n bytes of a file
 pub fn read_up_to(
     file: &mut impl std::io::Read,
@@ -23,7 +25,7 @@ pub fn read_up_to(
 ///
 /// _Note:_ a file is considered be a text one if there is no `0` in its first bytes
 pub fn is_text_file(data: &[u8], len: usize) -> bool {
-    !data[0..len].contains(&0u8)
+    !data[0..cmp::min(len, 2000)].contains(&0u8)
 }
 
 /// Check if a file is a tar archive
