@@ -10,6 +10,7 @@ pub struct Configuration {
     pub search_dir: String,
     pub excluded_path: Vec<String>,
     pub report_test_bin: bool,
+    pub truncated_pan: bool,
     pub check_text: bool,
     pub check_pdf: bool,
     pub check_tar: bool,
@@ -30,6 +31,7 @@ impl Configuration {
             search_dir: String::from("."),
             excluded_path: Vec::new(),
             report_test_bin: false,
+            truncated_pan: true,
             check_text: true,
             check_pdf: true,
             check_tar: true,
@@ -77,6 +79,9 @@ fn read_configuration_file(config: &mut Configuration, conf_file: &String) {
             }
             if parameters.contains_key("report_test") {
                 config.report_test_bin = parameters["report_test"].as_bool().unwrap();
+            }
+            if parameters.contains_key("truncated_pan") {
+                config.truncated_pan = parameters["truncated_pan"].as_bool().unwrap();
             }
             if parameters.contains_key("check_text") {
                 config.check_text = parameters["check_text"].as_bool().unwrap();
@@ -166,6 +171,9 @@ fn overload_conf_cli(config: &mut Configuration, args: &Args) {
     if args.no_console {
         config.output_console = false;
     }
+    if args.clear_pan {
+        config.truncated_pan = false;
+    }
     if args.text {
         config.output_text = true;
     }
@@ -210,6 +218,10 @@ struct Args {
     /// List, join by comma, of excluded files and directory (full path or part of it) [default: empty]
     #[arg(short, long)]
     exclusions: Option<String>,
+
+    /// Use clear PAN in report
+    #[arg(long, default_value_t = false)]
+    clear_pan: bool,
 
     /// Disable console report
     #[arg(long, default_value_t = false)]

@@ -22,6 +22,8 @@ Options:
           Name of directory to analyse [default: .]
   -e, --exclusions <EXCLUSIONS>
           List, join by comma, of excluded files and directory (full path or part of it) [default: empty]
+      --clear-pan
+          Use clear PAN in report
       --no-console
           Disable console report
       --text
@@ -73,6 +75,7 @@ Parameters live in a `parameters` section:
 
 * `search_dir`: name of directory to analyse (default: `.`)
 * `report_test`: report found PAN identified as test card (default : false)
+* `truncated_pan`: use truncated PAN in report (default : true)
 * `check_text`: enable analyse of text file (default : true)
 * `check_pdf`: enable analyse of PDF file (default : true)
 * `check_tar`: enable analyse of TAR archive (default : true)

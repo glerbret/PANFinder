@@ -198,23 +198,23 @@ mod tests {
             assert_eq!(res.pan_found_per_subfiles[0].pan_found.len(), 5);
             assert_eq!(
                 res.pan_found_per_subfiles[0].pan_found[0].pan,
-                "5017670000000000"
+                "************0000"
             );
             assert_eq!(
                 res.pan_found_per_subfiles[0].pan_found[1].pan,
-                "5017670000000018"
+                "************0018"
             );
             assert_eq!(
                 res.pan_found_per_subfiles[0].pan_found[2].pan,
-                "5017670000000026"
+                "************0026"
             );
             assert_eq!(
                 res.pan_found_per_subfiles[0].pan_found[3].pan,
-                "5017670000000034"
+                "************0034"
             );
             assert_eq!(
                 res.pan_found_per_subfiles[0].pan_found[4].pan,
-                "5017670000000042"
+                "************0042"
             );
 
             assert_eq!(
@@ -224,19 +224,19 @@ mod tests {
             assert_eq!(res.pan_found_per_subfiles[1].pan_found.len(), 4);
             assert_eq!(
                 res.pan_found_per_subfiles[1].pan_found[0].pan,
-                "5017670000000000"
+                "************0000"
             );
             assert_eq!(
                 res.pan_found_per_subfiles[1].pan_found[1].pan,
-                "5017670000000018"
+                "************0018"
             );
             assert_eq!(
                 res.pan_found_per_subfiles[1].pan_found[2].pan,
-                "5017670000000026"
+                "************0026"
             );
             assert_eq!(
                 res.pan_found_per_subfiles[1].pan_found[3].pan,
-                "5017670000000034"
+                "************0034"
             );
         }
     }
