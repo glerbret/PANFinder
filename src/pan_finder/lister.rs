@@ -111,7 +111,6 @@ fn detect_file_type(config: &Configuration, path: &Path) -> FileType {
                 }
             } else if is_tar_file(&data, len) {
                 if config.check_tar {
-                    println!("{} is tar file", path.display());
                     FileType::Tar
                 } else {
                     FileType::Unknown
