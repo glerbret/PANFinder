@@ -9,6 +9,7 @@ dependencies = [
  "chrono",
  "clap",
  "colored",
+ "flate2",
  "hex",
  "hmac-sha512",
  "indicatif",

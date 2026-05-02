@@ -48,6 +48,16 @@ pub fn is_pdf_file(data: &[u8], len: usize) -> bool {
     }
 }
 
+/// Check if a file is a gzip one
+pub fn is_gz_file(data: &[u8], len: usize) -> bool {
+    if len >= 3 {
+        let header: [u8; 3] = data[0..3].try_into().unwrap();
+        &header == b"\x1F\x8B\x08"
+    } else {
+        false
+    }
+}
+
 /// Check if a file is empty
 pub fn is_file_empty(path: &Path) -> bool {
     match fs::metadata(path).map(|metadata| metadata.len() == 0) {
@@ -95,6 +105,18 @@ mod tests {
         data[3] = b'F';
         assert!(is_pdf_file(&data, 100));
         assert!(!is_pdf_file(&data, 3));
+    }
+
+    #[test]
+    fn test_is_gz_file() {
+        let mut data: [u8; 2000] = [0x30; 2000];
+        assert!(!is_gz_file(&data, 100));
+
+        data[0] = b'\x1F';
+        data[1] = b'\x8B';
+        data[2] = b'\x08';
+        assert!(is_gz_file(&data, 100));
+        assert!(!is_gz_file(&data, 2));
     }
 
     #[test]

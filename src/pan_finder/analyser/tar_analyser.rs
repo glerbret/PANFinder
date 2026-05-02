@@ -1,3 +1,4 @@
+use flate2::read::GzDecoder;
 use std::fs::File;
 use tar::{Archive, Entry};
 use walkdir::DirEntry;
@@ -16,62 +17,15 @@ pub fn analyse_tar_file(
     patterns_list: &Vec<Pattern>,
     config: &Configuration,
 ) -> Result<FileAnalyseResult, String> {
-    let mut results = FileAnalyseResult {
-        filename: file.path().to_str().unwrap().to_string(),
-        error_msg: String::new(),
-        pan_found: Vec::new(),
-        pan_found_per_subfiles: Vec::new(),
-    };
-
     match File::open(file.path()) {
         Ok(tar_file) => {
             let mut archive = Archive::new(tar_file);
-
-            let archive_content = match archive.entries() {
-                Ok(archive_content) => archive_content,
-                Err(e) => {
-                    return Err(format!(
-                        "read entries error {} {}",
-                        file.path().to_str().unwrap(),
-                        e
-                    ));
-                }
-            };
-
-            for inc_file in archive_content {
-                let mut inc_file = match inc_file {
-                    Ok(in_file) => in_file,
-                    Err(e) => {
-                        return Err(format!(
-                            "read embedded file error {} {}",
-                            file.path().to_str().unwrap(),
-                            e
-                        ));
-                    }
-                };
-
-                match check_inc_file(patterns_list, config, &mut inc_file) {
-                    Ok(pan_found) => {
-                        if !pan_found.is_empty() {
-                            results.pan_found_per_subfiles.push(SubFileAnalyseResult {
-                                subfilename: inc_file
-                                    .header()
-                                    .path()
-                                    .unwrap()
-                                    .to_str()
-                                    .unwrap()
-                                    .to_string(),
-                                pan_found,
-                            });
-                        }
-                    }
-                    Err(e) => return Err(e),
-                }
-
-                //results.append(&mut check_inc_file(patterns_list, config, &mut inc_file)?);
-            }
-
-            Ok(results)
+            check_tar_file(
+                patterns_list,
+                config,
+                file.path().to_str().unwrap(),
+                &mut archive,
+            )
         }
 
         Err(e) => Err(format!(
@@ -82,10 +36,90 @@ pub fn analyse_tar_file(
     }
 }
 
-fn check_inc_file(
+pub fn analyse_tar_gz_file(
+    file: &DirEntry,
     patterns_list: &Vec<Pattern>,
     config: &Configuration,
-    inc_file: &mut Entry<'_, File>,
+) -> Result<FileAnalyseResult, String> {
+    match File::open(file.path()) {
+        Ok(tar_file) => {
+            let tar = GzDecoder::new(tar_file);
+            let mut archive = Archive::new(tar);
+
+            check_tar_file(
+                patterns_list,
+                config,
+                file.path().to_str().unwrap(),
+                &mut archive,
+            )
+        }
+
+        Err(e) => Err(format!(
+            "read error {} {}",
+            file.path().to_str().unwrap(),
+            e
+        )),
+    }
+}
+
+fn check_tar_file<T: std::io::Read>(
+    patterns_list: &Vec<Pattern>,
+    config: &Configuration,
+    filename: &str,
+    archive: &mut Archive<T>,
+) -> Result<FileAnalyseResult, String> {
+    let mut results = FileAnalyseResult {
+        filename: filename.to_string(),
+        error_msg: String::new(),
+        pan_found: Vec::new(),
+        pan_found_per_subfiles: Vec::new(),
+    };
+
+    //let mut archive = Archive::new(tar_file);
+
+    let archive_content = match archive.entries() {
+        Ok(archive_content) => archive_content,
+        Err(e) => {
+            return Err(format!("read entries error {filename} {e}"));
+        }
+    };
+
+    for inc_file in archive_content {
+        let mut inc_file = match inc_file {
+            Ok(in_file) => in_file,
+            Err(e) => {
+                return Err(format!("read embedded file error {filename} {e}"));
+            }
+        };
+
+        match check_inc_file(patterns_list, config, &mut inc_file) {
+            Ok(pan_found) => {
+                if !pan_found.is_empty() {
+                    results.pan_found_per_subfiles.push(SubFileAnalyseResult {
+                        subfilename: inc_file
+                            .header()
+                            .path()
+                            .unwrap()
+                            .to_str()
+                            .unwrap()
+                            .to_string(),
+                        pan_found,
+                    });
+                }
+            }
+            Err(e) => return Err(e),
+        }
+
+        //results.append(&mut check_inc_file(patterns_list, config, &mut inc_file)?);
+    }
+
+    Ok(results)
+}
+
+fn check_inc_file<T: std::io::Read>(
+    patterns_list: &Vec<Pattern>,
+    config: &Configuration,
+    inc_file: &mut Entry<'_, T>,
 ) -> Result<Vec<PanFound>, String> {
     let size = usize::try_from(inc_file.header().size().unwrap()).unwrap();
     let mut data = vec![0u8; size];

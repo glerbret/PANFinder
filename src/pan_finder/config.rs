@@ -14,6 +14,7 @@ pub struct Configuration {
     pub check_text: bool,
     pub check_pdf: bool,
     pub check_tar: bool,
+    pub check_compress: bool,
     pub quiet_mode: bool,
     pub output_console: bool,
     pub output_text: bool,
@@ -35,6 +36,7 @@ impl Configuration {
             check_text: true,
             check_pdf: true,
             check_tar: true,
+            check_compress: true,
             quiet_mode: false,
             output_console: true,
             output_text: false,
@@ -91,6 +93,9 @@ fn read_configuration_file(config: &mut Configuration, conf_file: &String) {
             }
             if parameters.contains_key("check_tar") {
                 config.check_tar = parameters["check_tar"].as_bool().unwrap();
+            }
+            if parameters.contains_key("check_compress") {
+                config.check_compress = parameters["check_compress"].as_bool().unwrap();
             }
             if parameters.contains_key("output_console") {
                 config.output_console = parameters["output_console"].as_bool().unwrap();
@@ -203,6 +208,9 @@ fn overload_conf_cli(config: &mut Configuration, args: &Args) {
     if args.disable_tar_check {
         config.check_tar = false;
     }
+    if args.disable_compress_check {
+        config.check_compress = false;
+    }
 }
 
 /// Configuration from command line
@@ -255,17 +263,21 @@ struct Args {
     #[arg(long, default_value_t = false)]
     report_test: bool,
 
-    /// Disable analyse of text file
+    /// Disable analyse of text files
     #[arg(long, default_value_t = false)]
     disable_text_check: bool,
 
-    /// Disable analyse of PDF file
+    /// Disable analyse of PDF files
     #[arg(long, default_value_t = false)]
     disable_pdf_check: bool,
 
-    /// Disable analyse of TAR archive
+    /// Disable analyse of TAR archives
     #[arg(long, default_value_t = false)]
     disable_tar_check: bool,
+
+    /// Disable analyse of compressed files
+    #[arg(long, default_value_t = false)]
+    disable_compress_check: bool,
 
     /// Quiet mode
     #[arg(short, long, default_value_t = false)]

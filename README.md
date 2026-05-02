@@ -41,11 +41,13 @@ Options:
       --report-test
           Enable report of PAN identified as test card
       --disable-text-check
-          Disable analyse of text file
+          Disable analyse of text files
       --disable-pdf-check
-          Disable analyse of PDF file
+          Disable analyse of PDF files
       --disable-tar-check
-          Disable analyse of TAR archive
+          Disable analyse of TAR archives
+      --disable-compress-check
+          Disable analyse of compressed files
   -q, --quiet-mode
           Quiet mode
   -c, --conf-file <CONF_FILE>
@@ -63,9 +65,10 @@ If a parameter is set in both configuration file and command line arguments, the
 
 The supported format, with format detection criteria, are listed hereafter
 
-* Text files: files without any `0` in the first 2000 bytes and not yet identified as other file type
 * PDF files: files with `%PDF` as first 4 digits
 * TAR archives: files with `ustar` as `[257; 262[` bytes
+* GZIp files: files with `0x1F, 0x8B, 0x08` as first digits
+* Text files: files without any `0` in the first 2000 bytes and not yet identified as other file type
 
 ## Configuration file
 
@@ -76,9 +79,10 @@ Parameters live in a `parameters` section:
 * `search_dir`: name of directory to analyse (default: `.`)
 * `report_test`: report found PAN identified as test card (default : false)
 * `truncated_pan`: use truncated PAN in report (default : true)
-* `check_text`: enable analyse of text file (default : true)
-* `check_pdf`: enable analyse of PDF file (default : true)
-* `check_tar`: enable analyse of TAR archive (default : true)
+* `check_text`: enable analyse of text files (default : true)
+* `check_pdf`: enable analyse of PDF files (default : true)
+* `check_tar`: enable analyse of TAR archives (default : true)
+* `check_compress`: enable analyse of compressed files (default : true)
 * `output_console`: enable report on console (default : true)
 * `output_text`: enable report in text file (default : false)
 * `text_filename`: name of output file text (default: `PANFinder_<datetime>.txt`)
@@ -98,7 +102,8 @@ _Note:_ `filename` must be enclosed by `"` and use `/` as path separator
 ## Known limitations
 
 * Code Climate report always use `1` as line number
-* Analyse of TAR archive only check for included PDF and text files
+* Analyse of TAR archives only check for included PDF and text files (not compressed files)
+* Analyse of compressed files only check for included PDF, text and tar files (not other compressed files)
 * Number are reported without space, `\r`, `\n` or `-` characters
 
 ## Future evolution
