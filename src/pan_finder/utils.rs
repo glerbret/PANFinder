@@ -58,6 +58,16 @@ pub fn is_gz_file(data: &[u8], len: usize) -> bool {
     }
 }
 
+/// Check if a file is a bzip2 one
+pub fn is_bz2_file(data: &[u8], len: usize) -> bool {
+    if len >= 3 {
+        let header: [u8; 3] = data[0..3].try_into().unwrap();
+        &header == b"BZh"
+    } else {
+        false
+    }
+}
+
 /// Check if a file is empty
 pub fn is_file_empty(path: &Path) -> bool {
     match fs::metadata(path).map(|metadata| metadata.len() == 0) {
@@ -117,6 +127,18 @@ mod tests {
         data[2] = b'\x08';
         assert!(is_gz_file(&data, 100));
         assert!(!is_gz_file(&data, 2));
+    }
+
+    #[test]
+    fn test_is_bz2_file() {
+        let mut data: [u8; 2000] = [0x30; 2000];
+        assert!(!is_bz2_file(&data, 100));
+
+        data[0] = b'B';
+        data[1] = b'Z';
+        data[2] = b'h';
+        assert!(is_bz2_file(&data, 100));
+        assert!(!is_bz2_file(&data, 2));
     }
 
     #[test]

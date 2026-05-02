@@ -1,4 +1,4 @@
-use flate2::bufread;
+use bzip2::bufread;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::Read;
@@ -7,20 +7,20 @@ use walkdir::DirEntry;
 use crate::pan_finder::analyser::analyser_api::{FileAnalyseResult, PanFound};
 use crate::pan_finder::analyser::common::Pattern;
 use crate::pan_finder::analyser::pdf_analyser::analyse_pdf_file_content;
-use crate::pan_finder::analyser::tar_analyser::analyse_tar_gz_file;
+use crate::pan_finder::analyser::tar_analyser::analyse_tar_bz2_file;
 use crate::pan_finder::analyser::text_analyser::analyse_text_file_content;
 use crate::pan_finder::config::Configuration;
 use crate::pan_finder::utils::{is_pdf_file, is_tar_file, is_text_file};
 
-pub fn analyse_gz_file(
+pub fn analyse_bz2_file(
     file: &DirEntry,
     patterns_list: &Vec<Pattern>,
     config: &Configuration,
 ) -> Result<FileAnalyseResult, String> {
     match File::open(file.path()) {
-        Ok(gz_file) => {
-            let input = BufReader::new(gz_file);
-            let mut decoder = bufread::GzDecoder::new(input);
+        Ok(bz2_file) => {
+            let input = BufReader::new(bz2_file);
+            let mut decoder = bufread::BzDecoder::new(input);
 
             let mut buffer = Vec::new();
             let read_size = match decoder.read_to_end(&mut buffer) {
@@ -74,7 +74,7 @@ fn check_compressed_file(
             pan_found_per_subfiles: Vec::new(),
         })
     } else if is_tar_file(&data, size) {
-        analyse_tar_gz_file(file, patterns_list, config)
+        analyse_tar_bz2_file(file, patterns_list, config)
     } else {
         Ok(FileAnalyseResult {
             filename: String::new(),
@@ -120,7 +120,7 @@ mod tests {
     use walkdir::WalkDir;
 
     #[test]
-    fn analyse_gz_file_txt_not_present() {
+    fn analyse_bz2_file_txt_not_present() {
         let patterns = vec![Pattern {
             brand: String::from("Credit card"),
             re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
@@ -139,15 +139,15 @@ mod tests {
         }];
         let config = Configuration::new();
 
-        for entry in WalkDir::new("testdata/text_not_present.gz") {
+        for entry in WalkDir::new("testdata/text_not_present.bz2") {
             let res: FileAnalyseResult =
-                analyse_gz_file(&entry.unwrap(), &patterns, &config).unwrap();
+                analyse_bz2_file(&entry.unwrap(), &patterns, &config).unwrap();
             assert!(res.pan_found.is_empty());
         }
     }
 
     #[test]
-    fn analyse_gz_file_pdf_not_present() {
+    fn analyse_bz2_file_pdf_not_present() {
         let patterns = vec![Pattern {
             brand: String::from("Credit card"),
             re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
@@ -166,14 +166,14 @@ mod tests {
         }];
         let config = Configuration::new();
 
-        for entry in WalkDir::new("testdata/pdf_not_present.gz") {
-            let res = analyse_gz_file(&entry.unwrap(), &patterns, &config).unwrap();
+        for entry in WalkDir::new("testdata/pdf_not_present.bz2") {
+            let res = analyse_bz2_file(&entry.unwrap(), &patterns, &config).unwrap();
             assert!(res.pan_found.is_empty());
         }
     }
 
     #[test]
-    fn analyse_gz_file_txt_present() {
+    fn analyse_bz2_file_txt_present() {
         let patterns = vec![Pattern {
             brand: String::from("Credit card"),
             re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
@@ -192,9 +192,9 @@ mod tests {
         }];
         let config = Configuration::new();
 
-        for entry in WalkDir::new("testdata/text_present.gz") {
+        for entry in WalkDir::new("testdata/text_present.bz2") {
             let res: FileAnalyseResult =
-                analyse_gz_file(&entry.unwrap(), &patterns, &config).unwrap();
+                analyse_bz2_file(&entry.unwrap(), &patterns, &config).unwrap();
             assert_eq!(res.pan_found.len(), 4);
             assert_eq!(res.pan_found[0].pan, "************0000");
             assert_eq!(res.pan_found[1].pan, "************0018");
@@ -204,7 +204,7 @@ mod tests {
     }
 
     #[test]
-    fn analyse_gz_file_pdf_present() {
+    fn analyse_bz2_file_pdf_present() {
         let patterns = vec![Pattern {
             brand: String::from("Credit card"),
             re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
@@ -223,8 +223,8 @@ mod tests {
         }];
         let config = Configuration::new();
 
-        for entry in WalkDir::new("testdata/pdf_present.gz") {
-            let res = analyse_gz_file(&entry.unwrap(), &patterns, &config).unwrap();
+        for entry in WalkDir::new("testdata/pdf_present.bz2") {
+            let res = analyse_bz2_file(&entry.unwrap(), &patterns, &config).unwrap();
             assert_eq!(res.pan_found.len(), 5);
             assert_eq!(res.pan_found[0].pan, "************0000");
             assert_eq!(res.pan_found[1].pan, "************0018");
@@ -235,7 +235,7 @@ mod tests {
     }
 
     #[test]
-    fn analyse_gz_file_tar_not_present() {
+    fn analyse_bz2_file_tar_not_present() {
         let patterns = vec![Pattern {
             brand: String::from("Credit card"),
             re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
@@ -254,14 +254,14 @@ mod tests {
         }];
         let config = Configuration::new();
 
-        for entry in WalkDir::new("testdata/tar_not_present.tgz") {
-            let res = analyse_gz_file(&entry.unwrap(), &patterns, &config).unwrap();
+        for entry in WalkDir::new("testdata/tar_not_present.tar.bz2") {
+            let res = analyse_bz2_file(&entry.unwrap(), &patterns, &config).unwrap();
             assert!(res.pan_found.is_empty());
         }
     }
 
     #[test]
-    fn analyse_gz_file_tar_present() {
+    fn analyse_bz2_file_tar_present() {
         let patterns = vec![Pattern {
             brand: String::from("Credit card"),
             re: Regex::new(r"[2-7]([-\s]*[0-9]{1}){15}").unwrap(),
@@ -280,8 +280,8 @@ mod tests {
         }];
         let config = Configuration::new();
 
-        for entry in WalkDir::new("testdata/tar_present.tgz") {
-            let res = analyse_gz_file(&entry.unwrap(), &patterns, &config).unwrap();
+        for entry in WalkDir::new("testdata/tar_present.tar.bz2") {
+            let res = analyse_bz2_file(&entry.unwrap(), &patterns, &config).unwrap();
             assert_eq!(res.pan_found.len(), 0);
             assert_eq!(res.pan_found_per_subfiles.len(), 2);
 

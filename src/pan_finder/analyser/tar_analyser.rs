@@ -1,3 +1,4 @@
+use bzip2::read::BzDecoder;
 use flate2::read::GzDecoder;
 use std::fs::File;
 use tar::{Archive, Entry};
@@ -44,6 +45,32 @@ pub fn analyse_tar_gz_file(
     match File::open(file.path()) {
         Ok(tar_file) => {
             let tar = GzDecoder::new(tar_file);
+            let mut archive = Archive::new(tar);
+
+            check_tar_file(
+                patterns_list,
+                config,
+                file.path().to_str().unwrap(),
+                &mut archive,
+            )
+        }
+
+        Err(e) => Err(format!(
+            "read error {} {}",
+            file.path().to_str().unwrap(),
+            e
+        )),
+    }
+}
+
+pub fn analyse_tar_bz2_file(
+    file: &DirEntry,
+    patterns_list: &Vec<Pattern>,
+    config: &Configuration,
+) -> Result<FileAnalyseResult, String> {
+    match File::open(file.path()) {
+        Ok(tar_file) => {
+            let tar = BzDecoder::new(tar_file);
             let mut archive = Archive::new(tar);
 
             check_tar_file(

@@ -1,4 +1,5 @@
 mod analyser_api;
+mod bz2_analyser;
 mod common;
 mod gz_analyser;
 mod pdf_analyser;

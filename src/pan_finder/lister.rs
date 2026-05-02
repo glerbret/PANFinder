@@ -6,7 +6,7 @@ use walkdir::WalkDir;
 
 use crate::pan_finder::config::Configuration;
 use crate::pan_finder::utils::{
-    is_file_empty, is_gz_file, is_pdf_file, is_tar_file, is_text_file, read_up_to,
+    is_bz2_file, is_file_empty, is_gz_file, is_pdf_file, is_tar_file, is_text_file, read_up_to,
 };
 
 #[derive(PartialEq, Eq, Debug)]
@@ -17,6 +17,7 @@ pub enum FileType {
     Pdf,
     Tar,
     Gzip,
+    Bzip2,
 }
 
 /// Configuration of application
@@ -120,6 +121,12 @@ fn detect_file_type(config: &Configuration, path: &Path) -> FileType {
             } else if is_gz_file(&data, len) {
                 if config.check_compress {
                     FileType::Gzip
+                } else {
+                    FileType::Unknown
+                }
+            } else if is_bz2_file(&data, len) {
+                if config.check_compress {
+                    FileType::Bzip2
                 } else {
                     FileType::Unknown
                 }
