@@ -8,6 +8,7 @@ use crate::pan_finder::analyser::gz_analyser::analyse_gz_file;
 use crate::pan_finder::analyser::pdf_analyser::analyse_pdf_file;
 use crate::pan_finder::analyser::tar_analyser::analyse_tar_file;
 use crate::pan_finder::analyser::text_analyser::analyse_text_file;
+use crate::pan_finder::analyser::zip_analyser::analyse_zip_file;
 use crate::pan_finder::config::Configuration;
 use crate::pan_finder::lister::{FileType, FilesDescription};
 
@@ -71,6 +72,7 @@ pub fn analyse_files(files_list: Vec<FilesDescription>, config: &Configuration) 
             FileType::Tar => analyse_tar_file(&f.file_entry, &patterns_list, config),
             FileType::Gzip => analyse_gz_file(&f.file_entry, &patterns_list, config),
             FileType::Bzip2 => analyse_bz2_file(&f.file_entry, &patterns_list, config),
+            FileType::Zip => analyse_zip_file(&f.file_entry, &patterns_list, config),
             FileType::Unknown => Ok(FileAnalyseResult {
                 filename: String::new(),
                 error_msg: String::new(),

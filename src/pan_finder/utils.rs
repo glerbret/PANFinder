@@ -68,6 +68,18 @@ pub fn is_bz2_file(data: &[u8], len: usize) -> bool {
     }
 }
 
+/// Check if a file is a zip one
+///
+/// Magic number 0x50, 0x4B, 0x05, 0x06 is ignored as it is used for empty archive
+pub fn is_zip_file(data: &[u8], len: usize) -> bool {
+    if len >= 4 {
+        let header: [u8; 4] = data[0..4].try_into().unwrap();
+        &header == b"\x50\x4B\x03\x04" || &header == b"\x50\x4B\x07\x08"
+    } else {
+        false
+    }
+}
+
 /// Check if a file is empty
 pub fn is_file_empty(path: &Path) -> bool {
     match fs::metadata(path).map(|metadata| metadata.len() == 0) {
@@ -153,5 +165,24 @@ mod tests {
         data[261] = b'r';
         assert!(is_tar_file(&data, 500));
         assert!(!is_tar_file(&data, 140));
+    }
+
+    #[test]
+    fn test_is_zip_file() {
+        let mut data: [u8; 2000] = [0x30; 2000];
+        assert!(!is_zip_file(&data, 500));
+
+        data[0] = b'\x50';
+        data[1] = b'\x4B';
+        data[2] = b'\x03';
+        data[3] = b'\x04';
+        assert!(is_zip_file(&data, 500));
+        assert!(!is_zip_file(&data, 2));
+
+        data[0] = b'\x50';
+        data[1] = b'\x4B';
+        data[2] = b'\x07';
+        data[3] = b'\x08';
+        assert!(is_zip_file(&data, 500));
     }
 }

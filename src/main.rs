@@ -1,4 +1,5 @@
 mod pan_finder;
+
 use crate::pan_finder::analyser::analyse_files;
 use crate::pan_finder::config::get_config;
 use crate::pan_finder::lister::get_files_list;

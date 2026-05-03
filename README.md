@@ -67,8 +67,12 @@ The supported format, with format detection criteria, are listed hereafter
 
 * PDF files: files with `%PDF` as first 4 digits
 * TAR archives: files with `ustar` as `[257; 262[` bytes
-* GZIp files: files with `0x1F, 0x8B, 0x08` as first digits
+* GZIP files: files with `0x1F, 0x8B, 0x08` as first digits
+* BZIP2 files: files with `BZh` as first digits
+* ZIP files: files with `0x50, 0x4B, 0x03, 0x04` or `0x50, 0x4B, 0x07, 0x08` as first digits
 * Text files: files without any `0` in the first 2000 bytes and not yet identified as other file type
+
+_Note:_ `0x50, 0x4B, 0x05, 0x06` that indicate an empty ZIP archive is not used as there is nothing to analyse
 
 ## Configuration file
 
@@ -102,13 +106,12 @@ _Note:_ `filename` must be enclosed by `"` and use `/` as path separator
 ## Known limitations
 
 * Code Climate report always use `1` as line number
-* Analyse of TAR archives only check for included PDF and text files (not compressed files)
-* Analyse of compressed files only check for included PDF, text and tar files (not other compressed files)
 * Number are reported without space, `\r`, `\n` or `-` characters
-
-## Future evolution
-
-* [ ] Support more file format (archives and compressed files, ...)
+* Analyse of archives and compressed files only check few type of embedded files
+  * TAR archives: PDF and text files (not compressed files neither archives)
+  * GIZ and BZIP2 files: PDF, TAR and text files (not other compressed files)
+  * ZIP files: PDF and text files (not compressed files neither archives)
+* Due to internal encoding, PAN with space or line feed may be not detected in XLSX, DOCS, ODS and such files
 
 ## License
 

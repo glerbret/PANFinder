@@ -5,5 +5,6 @@ mod gz_analyser;
 mod pdf_analyser;
 mod tar_analyser;
 mod text_analyser;
+mod zip_analyser;
 
 pub use self::analyser_api::*;
