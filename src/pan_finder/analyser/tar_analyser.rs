@@ -103,8 +103,6 @@ fn check_tar_file<T: std::io::Read>(
         pan_found_per_subfiles: Vec::new(),
     };
 
-    //let mut archive = Archive::new(tar_file);
-
     let archive_content = match archive.entries() {
         Ok(archive_content) => archive_content,
         Err(e) => {
@@ -137,8 +135,6 @@ fn check_tar_file<T: std::io::Read>(
             }
             Err(e) => return Err(e),
         }
-
-        //results.append(&mut check_inc_file(patterns_list, config, &mut inc_file)?);
     }
 
     Ok(results)
@@ -149,10 +145,8 @@ fn check_inc_file<T: std::io::Read>(
     config: &Configuration,
     inc_file: &mut Entry<'_, T>,
 ) -> Result<Vec<PanFound>, String> {
-    //let size = usize::try_from(inc_file.header().size().unwrap()).unwrap();
     let mut data = Vec::new();
 
-    //    match read_up_to(inc_file, &mut data) {
     match inc_file.read_to_end(&mut data) {
         Ok(size) => {
             let filename = inc_file.header().path().unwrap();
