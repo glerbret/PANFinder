@@ -1,7 +1,7 @@
 [package]
 name = "PANFinder"
 description = "Search for PAN in files"
-version = "0.3.0"
+version = "1.0.0"
 edition = "2024"
 authors = ["Grégory Lerbret"]
 license = "MIT"
