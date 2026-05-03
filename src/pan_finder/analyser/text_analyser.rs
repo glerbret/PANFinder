@@ -23,11 +23,7 @@ pub fn analyse_text_file(
             ),
             pan_found_per_subfiles: Vec::new(),
         }),
-        Err(e) => Err(format!(
-            "read error {} {}",
-            file.path().to_str().unwrap(),
-            e
-        )),
+        Err(err) => Err(format!("Error reading text file: {err}",)),
     }
 }
 

@@ -25,12 +25,8 @@ pub fn analyse_bz2_file(
             let mut buffer = Vec::new();
             let read_size = match decoder.read_to_end(&mut buffer) {
                 Ok(size) => size,
-                Err(e) => {
-                    return Err(format!(
-                        "Uncompress {} error: {}",
-                        file.path().to_str().unwrap(),
-                        e
-                    ));
+                Err(err) => {
+                    return Err(format!("Error reading bz2 file: {err}",));
                 }
             };
 
@@ -43,7 +39,7 @@ pub fn analyse_bz2_file(
                 file,
             )
         }
-        Err(e) => Err(format!("Read error {e}")),
+        Err(err) => Err(format!("Error opening bz2 file: {err}")),
     }
 }
 
@@ -98,7 +94,7 @@ fn check_text_file(
             filename,
             data,
         )),
-        Err(e) => Err(format!("Invalid UTF-8 sequence in {filename}, {e}")),
+        Err(err) => Err(format!("Invalid UTF-8 sequence in {filename}, {err}")),
     }
 }
 

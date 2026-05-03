@@ -27,20 +27,26 @@ pub fn analyse_zip_file(
         Ok(zip_file) => {
             let mut zip = match zip::ZipArchive::new(zip_file) {
                 Ok(zip) => zip,
-                Err(e) => return Err(format!("Read ZIP file error {e}")),
+                Err(err) => return Err(format!("Error opening zip file: {err}")),
             };
 
             for i in 0..zip.len() {
                 let mut inc_file = match zip.by_index(i) {
                     Ok(inc_file) => inc_file,
-                    Err(e) => return Err(format!("Read included file error {e}")),
+                    Err(err) => return Err(format!("Error getting included file: {err}")),
                 };
 
                 if inc_file.is_file() {
                     let mut data = Vec::new();
                     let size = match inc_file.read_to_end(&mut data) {
                         Ok(size) => size,
-                        Err(e) => return Err(format!("Read error {} {}", inc_file.name(), e)),
+                        Err(err) => {
+                            return Err(format!(
+                                "Error reading included file {}: {}",
+                                inc_file.name(),
+                                err
+                            ));
+                        }
                     };
 
                     match check_inc_file(patterns_list, config, inc_file.name(), data, size) {
@@ -52,12 +58,12 @@ pub fn analyse_zip_file(
                                 });
                             }
                         }
-                        Err(e) => return Err(e),
+                        Err(err) => return Err(err),
                     }
                 }
             }
         }
-        Err(e) => return Err(format!("read error {} {}", results.filename, e)),
+        Err(err) => return Err(format!("Error opening file {}: {}", results.filename, err)),
     }
 
     Ok(results)
@@ -92,7 +98,7 @@ fn check_text_file(
             filename,
             data,
         )),
-        Err(e) => Err(format!("Invalid UTF-8 sequence in {filename}, {e}")),
+        Err(err) => Err(format!("Invalid UTF-8 sequence in {filename}, {err}")),
     }
 }
 

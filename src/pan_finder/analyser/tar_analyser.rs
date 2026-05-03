@@ -30,11 +30,7 @@ pub fn analyse_tar_file(
             )
         }
 
-        Err(e) => Err(format!(
-            "read error {} {}",
-            file.path().to_str().unwrap(),
-            e
-        )),
+        Err(err) => Err(format!("Error opening tar file: {err}")),
     }
 }
 
@@ -56,11 +52,7 @@ pub fn analyse_tar_gz_file(
             )
         }
 
-        Err(e) => Err(format!(
-            "read error {} {}",
-            file.path().to_str().unwrap(),
-            e
-        )),
+        Err(err) => Err(format!("Error opening tar.gz file: {err}")),
     }
 }
 
@@ -82,11 +74,7 @@ pub fn analyse_tar_bz2_file(
             )
         }
 
-        Err(e) => Err(format!(
-            "read error {} {}",
-            file.path().to_str().unwrap(),
-            e
-        )),
+        Err(err) => Err(format!("Error opening tar.bz2 file: {err}")),
     }
 }
 
@@ -105,16 +93,18 @@ fn check_tar_file<T: std::io::Read>(
 
     let archive_content = match archive.entries() {
         Ok(archive_content) => archive_content,
-        Err(e) => {
-            return Err(format!("read entries error {filename} {e}"));
+        Err(err) => {
+            return Err(format!("Error gettting tar file information: {err}"));
         }
     };
 
     for inc_file in archive_content {
         let mut inc_file = match inc_file {
             Ok(in_file) => in_file,
-            Err(e) => {
-                return Err(format!("read embedded file error {filename} {e}"));
+            Err(err) => {
+                return Err(format!(
+                    "Error getting included file {filename} information: {err}"
+                ));
             }
         };
 
@@ -133,7 +123,7 @@ fn check_tar_file<T: std::io::Read>(
                     });
                 }
             }
-            Err(e) => return Err(e),
+            Err(err) => return Err(err),
         }
     }
 
@@ -158,10 +148,10 @@ fn check_inc_file<T: std::io::Read>(
                 Ok(Vec::new())
             }
         }
-        Err(e) => Err(format!(
-            "read error {} {}",
+        Err(err) => Err(format!(
+            "Error reading included file {}: {}",
             inc_file.header().path().unwrap().to_str().unwrap(),
-            e
+            err
         )),
     }
 }
@@ -179,7 +169,7 @@ fn check_text_file(
             filename,
             data,
         )),
-        Err(e) => Err(format!("Invalid UTF-8 sequence in {filename}, {e}")),
+        Err(err) => Err(format!("Invalid UTF-8 sequence in {filename}, {err}")),
     }
 }
 

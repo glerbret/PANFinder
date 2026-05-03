@@ -19,7 +19,7 @@ pub fn analyse_pdf_file(
             pan_found: pan,
             pan_found_per_subfiles: Vec::new(),
         }),
-        Err(e) => Err(e),
+        Err(err) => Err(err),
     }
 }
 
@@ -30,25 +30,21 @@ pub fn analyse_pdf_file_content(
     filename: &str,
     content: Vec<u8>,
 ) -> Result<Vec<PanFound>, String> {
-    let doc = get_pdf_doc_from_bytes(filename, content)?;
+    let doc = get_pdf_doc_from_bytes(content)?;
     analyse_content(patterns_list, config, filename, &doc)
 }
 
 fn get_pdf_doc_from_file(file: &DirEntry) -> Result<PdfDocument, String> {
     match PdfDocument::open(file.path()) {
         Ok(doc) => Ok(doc),
-        Err(err) => Err(format!(
-            "Can not open PDF file {}: {}",
-            file.path().to_str().unwrap(),
-            err
-        )),
+        Err(err) => Err(format!("Error opening PDF file: {err}")),
     }
 }
 
-fn get_pdf_doc_from_bytes(filename: &str, data: Vec<u8>) -> Result<PdfDocument, String> {
+fn get_pdf_doc_from_bytes(data: Vec<u8>) -> Result<PdfDocument, String> {
     match PdfDocument::from_bytes(data) {
         Ok(doc) => Ok(doc),
-        Err(err) => Err(format!("Can not open PDF file {filename}: {err}")),
+        Err(err) => Err(format!("Error opening PDF file: {err}")),
     }
 }
 
@@ -59,7 +55,7 @@ fn analyse_content(
     doc: &PdfDocument,
 ) -> Result<Vec<PanFound>, String> {
     let mut results: Vec<PanFound> = Vec::new();
-    let nb_pages = get_pdf_number_pages(filename, doc)?;
+    let nb_pages = get_pdf_number_pages(doc)?;
 
     for i in 0..nb_pages {
         match doc.extract_text(i) {
@@ -70,7 +66,7 @@ fn analyse_content(
                 }
             }
             Err(err) => {
-                return Err(format!("Can not read page {i} from {filename}: {err}"));
+                return Err(format!("Error reading page {i}: {err}"));
             }
         }
     }
@@ -78,10 +74,10 @@ fn analyse_content(
     Ok(results)
 }
 
-fn get_pdf_number_pages(filename: &str, doc: &PdfDocument) -> Result<usize, String> {
+fn get_pdf_number_pages(doc: &PdfDocument) -> Result<usize, String> {
     match doc.page_count() {
         Ok(nb_pages) => Ok(nb_pages),
-        Err(err) => Err(format!("Can not get number of page from {filename}: {err}")),
+        Err(err) => Err(format!("Error getting number of page: {err}")),
     }
 }
 
