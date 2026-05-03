@@ -77,9 +77,17 @@ fn check_inc_file(
     size: usize,
 ) -> Result<Vec<PanFound>, String> {
     if is_pdf_file(&data, size) {
-        check_pdf_file(patterns_list, config, filename, data)
+        if config.check_pdf {
+            check_pdf_file(patterns_list, config, filename, data)
+        } else {
+            Ok(Vec::new())
+        }
     } else if is_text_file(&data, size) {
-        check_text_file(patterns_list, config, filename, &data)
+        if config.check_text {
+            check_text_file(patterns_list, config, filename, &data)
+        } else {
+            Ok(Vec::new())
+        }
     } else {
         Ok(Vec::new())
     }

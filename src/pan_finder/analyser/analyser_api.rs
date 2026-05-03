@@ -33,6 +33,16 @@ pub struct FileAnalyseResult {
     // If file contains subfile
     pub pan_found_per_subfiles: Vec<SubFileAnalyseResult>,
 }
+impl FileAnalyseResult {
+    pub const fn new() -> Self {
+        Self {
+            filename: String::new(),
+            error_msg: String::new(),
+            pan_found: Vec::new(),
+            pan_found_per_subfiles: Vec::new(),
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct AnalyseResult {

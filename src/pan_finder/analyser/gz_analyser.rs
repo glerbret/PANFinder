@@ -52,32 +52,39 @@ fn check_compressed_file(
     file: &DirEntry,
 ) -> Result<FileAnalyseResult, String> {
     if is_pdf_file(&data, size) {
-        let res = check_pdf_file(patterns_list, config, filename, data)?;
+        if config.check_pdf {
+            let res = check_pdf_file(patterns_list, config, filename, data)?;
 
-        Ok(FileAnalyseResult {
-            filename: filename.to_string(),
-            error_msg: String::new(),
-            pan_found: res,
-            pan_found_per_subfiles: Vec::new(),
-        })
+            Ok(FileAnalyseResult {
+                filename: filename.to_string(),
+                error_msg: String::new(),
+                pan_found: res,
+                pan_found_per_subfiles: Vec::new(),
+            })
+        } else {
+            Ok(FileAnalyseResult::new())
+        }
     } else if is_tar_file(&data, size) {
-        analyse_tar_gz_file(file, patterns_list, config)
+        if config.check_tar {
+            analyse_tar_gz_file(file, patterns_list, config)
+        } else {
+            Ok(FileAnalyseResult::new())
+        }
     } else if is_text_file(&data, size) {
-        let res = check_text_file(patterns_list, config, filename, &data)?;
+        if config.check_text {
+            let res = check_text_file(patterns_list, config, filename, &data)?;
 
-        Ok(FileAnalyseResult {
-            filename: filename.to_string(),
-            error_msg: String::new(),
-            pan_found: res,
-            pan_found_per_subfiles: Vec::new(),
-        })
+            Ok(FileAnalyseResult {
+                filename: filename.to_string(),
+                error_msg: String::new(),
+                pan_found: res,
+                pan_found_per_subfiles: Vec::new(),
+            })
+        } else {
+            Ok(FileAnalyseResult::new())
+        }
     } else {
-        Ok(FileAnalyseResult {
-            filename: String::new(),
-            error_msg: String::new(),
-            pan_found: Vec::new(),
-            pan_found_per_subfiles: Vec::new(),
-        })
+        Ok(FileAnalyseResult::new())
     }
 }
 

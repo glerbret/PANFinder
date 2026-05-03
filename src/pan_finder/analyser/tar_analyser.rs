@@ -141,9 +141,17 @@ fn check_inc_file<T: std::io::Read>(
         Ok(size) => {
             let filename = inc_file.header().path().unwrap();
             if is_pdf_file(&data, size) {
-                check_pdf_file(patterns_list, config, filename.to_str().unwrap(), data)
+                if config.check_pdf {
+                    check_pdf_file(patterns_list, config, filename.to_str().unwrap(), data)
+                } else {
+                    Ok(Vec::new())
+                }
             } else if is_text_file(&data, size) {
-                check_text_file(patterns_list, config, filename.to_str().unwrap(), &data)
+                if config.check_text {
+                    check_text_file(patterns_list, config, filename.to_str().unwrap(), &data)
+                } else {
+                    Ok(Vec::new())
+                }
             } else {
                 Ok(Vec::new())
             }
