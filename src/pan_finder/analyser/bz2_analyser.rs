@@ -60,6 +60,8 @@ fn check_compressed_file(
             pan_found: res,
             pan_found_per_subfiles: Vec::new(),
         })
+    } else if is_tar_file(&data, size) {
+        analyse_tar_bz2_file(file, patterns_list, config)
     } else if is_text_file(&data, size) {
         let res = check_text_file(patterns_list, config, filename, &data)?;
 
@@ -69,8 +71,6 @@ fn check_compressed_file(
             pan_found: res,
             pan_found_per_subfiles: Vec::new(),
         })
-    } else if is_tar_file(&data, size) {
-        analyse_tar_bz2_file(file, patterns_list, config)
     } else {
         Ok(FileAnalyseResult {
             filename: String::new(),
