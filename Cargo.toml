@@ -19,7 +19,7 @@ hex = "0.4.3"
 hmac-sha512 = "1.1"
 indicatif = "0.18.4"
 luhn = "1.0"
-pdf_oxide = "0.3.41"
+pdf_oxide = "0.3.42"
 regex = "1.12"
 rust_xlsxwriter = "0.94.0"
 serde = { version = "1.0", features = ["derive"] }
